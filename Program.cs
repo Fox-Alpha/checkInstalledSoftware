@@ -126,6 +126,15 @@ namespace checkInstalledSoftware
                     dicTemp.Add(str, value);
                 }
                 appInf.AppRegistry = dicTemp;
+
+                int i = 0;
+                string appname = appInf.appName;
+
+                //  Dppelte Key verhindern
+                while (dicApplications.ContainsKey(appname + "_" + i))
+                    i++;    //  Incrementieren bis es passt
+                appInf.appName = appname + "_" + i;
+
                 dicApplications.Add(appInf.appName, appInf);
             }
         }
@@ -179,19 +188,17 @@ namespace checkInstalledSoftware
                 if (string.IsNullOrWhiteSpace(appName))
                 {
                     value.TryGetValue("DisplayName", out strTemp);
-                    if (strTemp != string.Empty)
-                    {
-                        appName = strTemp == string.Empty ? "_N/A_": strTemp;
-                    }
+                    appName = string.IsNullOrWhiteSpace(strTemp) ? "_N/A_": strTemp;                    
                 }
                 if (string.IsNullOrWhiteSpace(appVersion))
                 {
                     value.TryGetValue("DisplayVersion", out strTemp);
-                    if (strTemp != string.Empty)
-                    {
-                        appName = strTemp == string.Empty ? "_0.0.0.0_" : strTemp;
-                    }
+                    appVersion = string.IsNullOrWhiteSpace(strTemp) ? "_0.0.0.0_" : strTemp;                    
                 }
+
+                if (string.IsNullOrWhiteSpace(appName))
+                    Debug.WriteLine("Kein Name angegeben");
+
                 appRegistry = value;
             }
         }
