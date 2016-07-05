@@ -62,7 +62,7 @@ namespace checkInstalledSoftware
             RegistryKey key = Registry.LocalMachine.OpenSubKey(activePath,false);
             string[] valueNames;
 
-            if (key != null && key.ValueCount > 0)
+            if (key != null && key.SubKeyCount > 0)
             {
                 //  Alle Schlüssel der Installierten Anwendungen
                 foreach (string  appKey in key.GetSubKeyNames())
@@ -122,7 +122,7 @@ namespace checkInstalledSoftware
                             valueType = "N/A";
                             break;
                     }
-                    value = string.Format("[{0}] {1}", valueType, key.GetValueKind(str).ToString());
+                    value = string.Format("[{0}] {1}", valueType, key.GetValue(str).ToString());
                     dicTemp.Add(str, value);
                 }
                 appInf.AppRegistry = dicTemp;
