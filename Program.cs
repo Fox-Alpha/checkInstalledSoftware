@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+using Microsoft.Win32;
+
 using CommandLine;
 using CommandLine.Text;
 
@@ -13,6 +15,7 @@ namespace checkInstalledSoftware
     class Program
     {
         //	Rückgabewerte für Nagios
+        #region Eigenschaften
         enum nagiosStatus
         {
             Ok = 0,
@@ -23,9 +26,89 @@ namespace checkInstalledSoftware
 
         static int status = (int)nagiosStatus.Ok;
 
+        static Dictionary<string, AppInformation> dicApplications;
+
+        static string RegPath2Uninstall32 = "wow6432Node\\";
+        static string RegPath2Uninstall = "Software\\{0}Microsoft\\Windows\\CurrentVersion\\Uninstall\\";
+        #endregion
+
         static int Main(string[] args)
         {
+            dicApplications = new Dictionary<string, AppInformation>();
+
+            if (Environment.Is64BitOperatingSystem)
+            {
+                //  32 & 64 BIT Registry Bereiche lesen
+                GetRegistryInformation(false);
+                GetRegistryInformation(true); 
+            }
+            else
+            {
+                //  nur 32 Bit vorhanden
+                GetRegistryInformation(false);
+            }
+
             return (int)nagiosStatus.Unknown;
+        }
+
+        static void GetRegistryInformation(bool is64Bit)
+        {
+            //key.View = RegistryView.Registry64;
+
+            string activePath = string.Format(RegPath2Uninstall, is64Bit ? "" : RegPath2Uninstall32);
+            RegistryKey key = Registry.LocalMachine.OpenSubKey(activePath,false);
+            string[] valueNames;
+
+            if (key != null && key.ValueCount > 0)
+            {
+                //  Alle Schlüssel der Installierten Anwendungen
+                foreach (string  appKey in key.GetSubKeyNames())
+                {
+                    if((valueNames = key.OpenSubKey(appKey, false).GetValueNames()).Length > 0)
+                    {
+                        Add2Dictionary(valueNames, activePath + appKey);
+                    }
+                }
+            }
+        }
+
+        static void Add2Dictionary(string[] valueList, string RegPath)
+        {
+            RegistryKey key = Registry.LocalMachine.OpenSubKey(RegPath, false);
+            AppInformation appInf;
+
+            if (key != null && key.ValueCount > 0)
+            {
+                foreach (string str in valueList)
+                {
+                   switch( key.GetValueKind(str))
+                    {
+                        case RegistryValueKind.Binary:
+                            break;
+                        case RegistryValueKind.DWord:
+                            break;
+                        case RegistryValueKind.ExpandString:
+                            break;
+                        case RegistryValueKind.MultiString:
+                            break;
+                        case RegistryValueKind.None:
+                            break;
+                        case RegistryValueKind.QWord:
+                            break;
+                        case RegistryValueKind.String:
+                            break;
+                        case RegistryValueKind.Unknown:
+                            break;
+                    }
+                }
+
+
+                appInf = new AppInformation();
+            }
+        }
+
+        static void ExportData()
+        {
         }
     }
 
