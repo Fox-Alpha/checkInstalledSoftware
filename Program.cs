@@ -48,6 +48,8 @@ namespace checkInstalledSoftware
                 GetRegistryInformation(false);
             }
 
+            ExportData();
+
             return (int)nagiosStatus.Unknown;
         }
 
@@ -76,39 +78,60 @@ namespace checkInstalledSoftware
         {
             RegistryKey key = Registry.LocalMachine.OpenSubKey(RegPath, false);
             AppInformation appInf;
+            Dictionary<string, string> dicTemp;
+            string valueType = "";
+            string value;
 
             if (key != null && key.ValueCount > 0)
             {
+                appInf = new AppInformation();
+                dicTemp = new Dictionary<string, string>();
+
+                appInf.appRegKey = RegPath;
+
                 foreach (string str in valueList)
                 {
-                   switch( key.GetValueKind(str))
+                    switch( key.GetValueKind(str))
                     {
                         case RegistryValueKind.Binary:
+                            valueType = "Binary";
                             break;
                         case RegistryValueKind.DWord:
+                            valueType = "32-Bit DWord";
                             break;
                         case RegistryValueKind.ExpandString:
+                            valueType = "String mit Vars";
                             break;
                         case RegistryValueKind.MultiString:
+                            valueType = "Doppel-NULL String";
                             break;
                         case RegistryValueKind.None:
+                            valueType = "Kein Datentyp";
                             break;
                         case RegistryValueKind.QWord:
+                            valueType = "64-Bit DWord";
                             break;
                         case RegistryValueKind.String:
+                            valueType = "String";
                             break;
                         case RegistryValueKind.Unknown:
+                            valueType = "Unbekannt";
+                            break;
+                        default:
+                            valueType = "N/A";
                             break;
                     }
+                    value = string.Format("[{0}] {1}", valueType, key.GetValueKind(str).ToString());
+                    dicTemp.Add(str, value);
                 }
-
-
-                appInf = new AppInformation();
+                appInf.AppRegistry = dicTemp;
+                dicApplications.Add(appInf.appName, appInf);
             }
         }
 
         static void ExportData()
         {
+
         }
     }
 
@@ -143,18 +166,52 @@ namespace checkInstalledSoftware
         public Dictionary<string, string> AppRegistry
         {
             get { return appRegistry; }
-            set { appRegistry = value; }
+            set
+            {
+                string strTemp;
+                if (string.IsNullOrWhiteSpace(appName))
+                {
+                    value.TryGetValue("DisplayName", out strTemp);
+                    if (strTemp != string.Empty)
+                    {
+                        appName = strTemp == string.Empty ? "_N/A_": strTemp;
+                    }
+                }
+                if (string.IsNullOrWhiteSpace(appVersion))
+                {
+                    value.TryGetValue("DisplayVersion", out strTemp);
+                    if (strTemp != string.Empty)
+                    {
+                        appName = strTemp == string.Empty ? "_0.0.0.0_" : strTemp;
+                    }
+                }
+                appRegistry = value;
+            }
         }
 
         Dictionary<string, string> appRegistry;
 
-        public AppInformation() { }
+        public AppInformation()
+        {
+            appRegistry = new Dictionary<string, string>();
+        }
 
         public AppInformation(string _Name, string _Version, string _Key)
         {
             appName = _Name;
             appVersion = _Version;
             appRegKey = _Key;
+
+            appRegistry = new Dictionary<string, string>();
+        }
+
+        ~AppInformation()
+        {
+            if (appRegistry != null)
+            {
+                appRegistry.Clear();
+                appRegistry = null;
+            }
         }
     }
 
