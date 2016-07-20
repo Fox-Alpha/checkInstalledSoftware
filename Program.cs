@@ -130,6 +130,7 @@ namespace checkInstalledSoftware
                 int i = 0;
                 string appname = appInf.appName;
 
+                //  TODO: Nahng nur wenn standard bereits vorhanden
                 //  Dppelte Key verhindern
                 while (dicApplications.ContainsKey(appname + "_" + i))
                     i++;    //  Incrementieren bis es passt
