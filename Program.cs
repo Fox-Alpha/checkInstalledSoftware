@@ -147,9 +147,17 @@ namespace checkInstalledSoftware
         {
             if (dicApplications.Count > 0 )
             {
-                foreach (string name in dicApplications.Keys)
+                //foreach (string name in dicApplications.Keys)
+                //{
+                //    Debug.WriteLine(name);
+                //}
+                foreach (AppInformation ai in dicApplications.Values)
                 {
-                    Debug.WriteLine(name);
+                    string strTemp;
+
+                    ai.AppRegistry.TryGetValue("Publisher", out strTemp);
+
+                    Debug.WriteLine(string.Format("{2} - {0} - {1}", ai.appName, ai.appVersion, strTemp));
                 }
             }
         }
