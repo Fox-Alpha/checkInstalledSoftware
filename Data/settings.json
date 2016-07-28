@@ -1,0 +1,16 @@
+{
+	/* Parameter für die Suche */
+	/* "Name":"", "Version":"", "Publisher":"" */
+	"Search":"Publischer",
+	"Pattern":"(A|a)lpha(\s|[-]{0,1})(C|c)om",
+	"UseRegEx":"False",
+	"CaseSensitive":"False",
+
+	/* Vorgaben für die Exportierten Daten */
+	"ExportTargetDir":".\\Data\\",
+	"ExportFileName":"InstallierteSoftware",
+	"ExportFormat": [
+		"TXT"
+		/* 	"CSV", "XML", "JSON" */
+	]
+}
