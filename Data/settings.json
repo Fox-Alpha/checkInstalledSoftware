@@ -2,15 +2,24 @@
 	/* Parameter für die Suche */
 	/* "Name":"", "Version":"", "Publisher":"" */
 	"Search":"Publischer",
-	"Pattern":"(A|a)lpha(\s|[-]{0,1})(C|c)om",
+	"Pattern":"(A|a)lpha(\\s|[-]{0,1})(C|c)om",
 	"UseRegEx":"False",
 	"CaseSensitive":"False",
 
 	/* Vorgaben für die Exportierten Daten */
 	"ExportTargetDir":".\\Data\\",
 	"ExportFileName":"InstallierteSoftware",
-	"ExportFormat": [
+	"ExportFileFormat": [
 		"TXT"
 		/* 	"CSV", "XML", "JSON" */
-	]
+	],
+
+	/* Schreiben einer Logdatei, Pfad kann relativ zum RootDir sein '\\' oder zur Application .\\Data\\*/
+	"Log":"c:\\temp\\checkInstalledSoftwarel.Log.txt",
+	"AppendLog":"false",
+	
+	/* Noch nicht implementiert */
+	"LogSuffix":"",
+	"LogPrefix":""
+
 }
