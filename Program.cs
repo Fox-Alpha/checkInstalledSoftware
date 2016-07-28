@@ -132,9 +132,12 @@ namespace checkInstalledSoftware
 
                 //  TODO: Nahng nur wenn standard bereits vorhanden
                 //  Dppelte Key verhindern
-                while (dicApplications.ContainsKey(appname + "_" + i))
-                    i++;    //  Incrementieren bis es passt
-                appInf.appName = appname + "_" + i;
+                if (dicApplications.ContainsKey(appname))
+                {
+                    while (dicApplications.ContainsKey(appname + "_" + i))
+                        i++;    //  Incrementieren bis es passt
+                    appInf.appName = appname + "_" + i;
+                }
 
                 dicApplications.Add(appInf.appName, appInf);
             }
