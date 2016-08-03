@@ -5,6 +5,7 @@ using System.Text;
 using System.IO;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 using Microsoft.Win32;
 
@@ -191,10 +192,11 @@ namespace checkInstalledSoftware
 
 			if (dicApplications.Count > 0 )
             {
-                //foreach (string name in dicApplications.Keys)
-                //{
-                //    Debug.WriteLine(name);
-                //}
+				//foreach (string name in dicApplications.Keys)
+				//{
+				//    Debug.WriteLine(name);
+				//}
+				int i = 0;
                 foreach (AppInformation ai in dicApplications.Values)
                 {
                     string strTemp;
@@ -202,13 +204,45 @@ namespace checkInstalledSoftware
 					 * TODO: Filter nutzung
 					 */
 
-                    ai.AppRegistry.TryGetValue("Publisher", out strTemp);
+					if (!string.IsNullOrWhiteSpace(setting.strSearchTag) && !string.IsNullOrWhiteSpace (setting.strSearchPattern))
+					{
+						ai.AppRegistry.TryGetValue (setting.strSearchTag, out strTemp);
+
+						if (setting.bUseRegEx&& !string.IsNullOrWhiteSpace(strTemp))
+						{
+							if(Regex.IsMatch (strTemp, setting.strSearchPattern, setting.bCaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase))
+							{
+								WriteToExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, ai.appPublisher }));
+								i++;
+							}
+						}
+						else if (!setting.bUseRegEx && !string.IsNullOrWhiteSpace (strTemp))
+						{
+							if (strTemp == setting.strSearchPattern)
+							{
+								WriteToExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, ai.appPublisher }));
+								i++;
+							}
+						}
+
+					}
+					else
+					{
+						Debug.WriteLine (string.Format ("Fehler: Es wurde kein Suchbereich angegeben"));
+						WriteToLogFile (string.Format ("Fehler: Es wurde kein Suchbereich angegeben"));
+						//	TODO: Alle Exportformate beachten
+						WriteToExportFile (string.Format ("Fehler: Es wurde kein Suchbereich angegeben"));
+						return;
+					}
+
+					/*#####*/
+
+					ai.AppRegistry.TryGetValue("Publisher", out strTemp);
 
                     Debug.WriteLine(string.Format("{2} - {0} - {1}", ai.appName, ai.appVersion, strTemp));
 					//	TODO: Alle Exportformate beachten
-					WriteToExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, strTemp }));
                 }
-                WriteToLogFile("Es wurden {0} Einträge exportiert", dicApplications.Count.ToString());
+                WriteToLogFile("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString(), i.ToString());
             }
         }
 
@@ -292,7 +326,7 @@ namespace checkInstalledSoftware
 				//	}
 				//}
 
-				using (StreamWriter sw = File.AppendText (setting.strExportFileName + ".txt"))
+				using (StreamWriter sw = File.AppendText (Path.Combine (new string [] { setting.strExportTartgetDir, setting.strExportFileName + ".txt" })))
 				{
 					if (vals != null && vals.Length > 0)
 					{
@@ -302,7 +336,7 @@ namespace checkInstalledSoftware
 					else
 					{
 						sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), MessageFormat));      //Zeitstempel wird nicht geschrieben
-						//sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), MessageFormat));
+																											//sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), MessageFormat));
 					}
 				}
 			}
@@ -322,7 +356,9 @@ namespace checkInstalledSoftware
             set { _appRegKey = value; }
         }
 
-        private string _appName;
+		public string appPublisher { get; set; }
+
+		private string _appName;
 
         public string appName
         {
@@ -349,7 +385,14 @@ namespace checkInstalledSoftware
                     value.TryGetValue("DisplayName", out strTemp);
                     appName = string.IsNullOrWhiteSpace(strTemp) ? "_N/A_": strTemp;                    
                 }
-                if (string.IsNullOrWhiteSpace(appVersion))
+
+				if (string.IsNullOrWhiteSpace (appPublisher))
+				{
+					value.TryGetValue ("Publisher", out strTemp);
+					appPublisher = string.IsNullOrWhiteSpace (strTemp) ? "_NO_PUBLISHER_" : strTemp;
+				}
+
+				if (string.IsNullOrWhiteSpace(appVersion))
                 {
                     value.TryGetValue("DisplayVersion", out strTemp);
                     appVersion = string.IsNullOrWhiteSpace(strTemp) ? "_0.0.0.0_" : strTemp;                    
