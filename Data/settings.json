@@ -20,11 +20,18 @@
 	],
 
 	/* Schreiben einer Logdatei, Pfad kann relativ zum RootDir sein '\\' oder zur Application .\\Data\\*/
+	/* Wenn nicht angegeben und UseOutputInNagios == False, dann wird in die Console geschrieben */
 	"Log":"c:\\temp\\checkInstalledSoftwarel.Log.txt",
 	"AppendLog":"false",
+
+	/*	TODO: Option Log2Console */
+	/*	Schreibt Informelle Ausgaben in die Console */
+	/*"Log2Console":"True",
 	
 	/* Noch nicht implementiert */
 	"LogSuffix":"",
-	"LogPrefix":""
+	"LogPrefix":"",
 
+	/* Output Optionen */
+	"UseOutputInNagios":"False"
 }
