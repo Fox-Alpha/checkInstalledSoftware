@@ -183,7 +183,13 @@ namespace checkInstalledSoftware
 
         static void ExportData()
         {
-            if (dicApplications.Count > 0 )
+			if (File.Exists (setting.strExportFileName + ".txt"))
+			{
+				File.Delete (setting.strExportFileName + ".txt");
+				//setting.bAppend2Logfile = true;
+			}
+
+			if (dicApplications.Count > 0 )
             {
                 //foreach (string name in dicApplications.Keys)
                 //{
@@ -192,10 +198,15 @@ namespace checkInstalledSoftware
                 foreach (AppInformation ai in dicApplications.Values)
                 {
                     string strTemp;
+					/*
+					 * TODO: Filter nutzung
+					 */
 
                     ai.AppRegistry.TryGetValue("Publisher", out strTemp);
 
                     Debug.WriteLine(string.Format("{2} - {0} - {1}", ai.appName, ai.appVersion, strTemp));
+					//	TODO: Alle Exportformate beachten
+					WriteToExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, strTemp }));
                 }
                 WriteToLogFile("Es wurden {0} Einträge exportiert", dicApplications.Count.ToString());
             }
@@ -267,9 +278,39 @@ namespace checkInstalledSoftware
                 }
             }
         }
-    }
 
-    class AppInformation
+		static void WriteToExportFile (string MessageFormat, params string [] vals)
+		{
+			if (!string.IsNullOrWhiteSpace (setting.strExportTartgetDir) && Directory.Exists(setting.strExportTartgetDir))
+			{
+				//if (!setting.bAppend2Logfile)
+				//{
+				//	if (File.Exists (setting.strExportFileName + ".txt"))
+				//	{
+				//		File.Delete (setting.strExportFileName + ".txt");
+				//		//setting.bAppend2Logfile = true;
+				//	}
+				//}
+
+				using (StreamWriter sw = File.AppendText (setting.strExportFileName + ".txt"))
+				{
+					if (vals != null && vals.Length > 0)
+					{
+						//sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));
+						sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));    //Zeitstempel wird nicht geschrieben
+					}
+					else
+					{
+						sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), MessageFormat));      //Zeitstempel wird nicht geschrieben
+						//sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), MessageFormat));
+					}
+				}
+			}
+		}
+
+	}
+
+	class AppInformation
     {
         //  Klasse zum aufnehmen der Informationen aus der Registry
 
