@@ -38,6 +38,7 @@ namespace checkInstalledSoftware
         static string RegPath2Uninstall = "Software\\{0}Microsoft\\Windows\\CurrentVersion\\Uninstall\\";
 
         static Settings setting;
+		static int exportCount = 0;
 
         public static bool writeLog { get; private set; } = true;
         #endregion
@@ -85,9 +86,19 @@ namespace checkInstalledSoftware
             WriteToLogFile("Exportieren der Daten", null);
             WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
             ExportData();
+			if (setting.bUseOutputInNagios)
+			{
+				Console.WriteLine ("OK Es wurden {0} Anwendungen gefunden", exportCount);
+				return (int) nagiosStatus.Ok;
+			}
+			else
+			{
+				Console.WriteLine ("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString (), exportCount);
+
+				Console.WriteLine ("Taste drücken zum fortsetzen ! ...");
+				Console.ReadKey ();
+			}
 #if (DEBUG)
-            Console.WriteLine("Taste drücken zum fortsetzen ! ...");
-            Console.ReadKey();
 #endif
 
             return (int)nagiosStatus.Ok;
@@ -243,7 +254,9 @@ namespace checkInstalledSoftware
 					//	TODO: Alle Exportformate beachten
                 }
                 WriteToLogFile("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString(), i.ToString());
-            }
+				exportCount = i;
+
+			}
         }
 
         static private void ReadJSonKonfiguration(string JSonFile)
@@ -292,6 +305,12 @@ namespace checkInstalledSoftware
         {
             if (!string.IsNullOrWhiteSpace(setting.strLogFile))
             {
+				if (!Directory.Exists(Path.GetDirectoryName(setting.strLogFile)))
+				{
+					Directory.CreateDirectory (Path.GetDirectoryName (setting.strLogFile));
+				}
+
+
                 if (!setting.bAppend2Logfile)
                 {
                     if (File.Exists(setting.strLogFile))
@@ -446,9 +465,13 @@ namespace checkInstalledSoftware
         [Option('p', "pattern", Required = false, //Separator = ',',
         HelpText = "Welcher Begriff gesucht wird")]
         public string strFilter { get; set; }
-    }
 
-    [JsonObject(MemberSerialization.OptIn)]
+		[Option ('n', "nagios", Required = false, //Separator = ',',
+		HelpText = "Consolen Output ist Nagiosgerecht formartiert")]
+		public bool strOutputNagios { get; set; }
+	}
+
+	[JsonObject(MemberSerialization.OptIn)]
     class Settings
     {
         public Settings() { }
@@ -485,5 +508,8 @@ namespace checkInstalledSoftware
 
         [JsonProperty(PropertyName = "LogPrefix", Required = Required.AllowNull)]
         public string strLogPrefix { get; set; } = "";
-    }
+
+		[JsonProperty (PropertyName = "UseOutputInNagios")]
+		public bool bUseOutputInNagios { get; set; } = false;
+	}
 }
