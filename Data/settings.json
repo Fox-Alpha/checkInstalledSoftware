@@ -1,9 +1,14 @@
 {
 	/* Parameter für die Suche */
 	/* "Name":"", "Version":"", "Publisher":"" */
-	"Search":"Publischer",
+	/* TODO: Option 'ALL' Alle Schlüsselwerte durchsuchen */
+	"Search":"Publisher",
+
+	/* TODO:	Optional leeres Pattern für Ausgabe aller installierten Anwendungen */
+	/*			UseRegEx darf dann nicht 'TRUE' sein */
 	"Pattern":"(A|a)lpha(\\s|[-]{0,1})(C|c)om",
-	"UseRegEx":"False",
+	/* "Pattern":"alpha com", */
+	"UseRegEx":"True",
 	"CaseSensitive":"False",
 
 	/* Vorgaben für die Exportierten Daten */
