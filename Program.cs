@@ -50,17 +50,35 @@ namespace checkInstalledSoftware
 
             if ((cmdLine = Environment.GetCommandLineArgs()).Length > 1)
             {
-                strJSONKonfigFile = cmdLine[1];
+#if (DEBUG)
+				//Console.WriteLine (Environment.CommandLine);
+#endif
+				string strTemp = cmdLine [1];
+				if(Path.IsPathRooted(strTemp))
+				{
+					if (File.Exists(cmdLine [1]))
+					{
+						strJSONKonfigFile = cmdLine [1];
+					}
+				}
+				else
+				{
+					strJSONKonfigFile = Path.Combine (new string [] { AppDomain.CurrentDomain.BaseDirectory, cmdLine [1]});
+				}
             }
 
             if (File.Exists(strJSONKonfigFile))
             {
                 // Laden der Parameter aus der Konfiguration
                 ReadJSonKonfiguration(strJSONKonfigFile);
-                WriteToLogFile(string.Format("Start der Anwendung"), null);
+#if (DEBUG)
+				//Console.WriteLine ("\r\n#####\r\n" + strJSONKonfigFile + "\r\n#####\r\n");
+#endif
+
+				WriteToLogFile (string.Format("Start der Anwendung"), null);
                 WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
 
-                WriteToLogFile(string.Format("Laden der Such und Filter Bedingungen"), new string[] {strJSONKonfigFile});
+                WriteToLogFile("Laden der Such und Filter Bedingungen: {0}", new string[] {strJSONKonfigFile});
             }
             else
             {
@@ -280,25 +298,42 @@ namespace checkInstalledSoftware
 
             JsonSerializer serializer = JsonSerializer.CreateDefault(jsonSerializerSettings);
 
-            //StreamWriter sw = new StreamWriter (@"data\exampleOut.json");
-            //JsonWriter writer = new JsonTextWriter (sw);
+			//StreamWriter sw = new StreamWriter (@"data\exampleOut.json");
+			//JsonWriter writer = new JsonTextWriter (sw);
+			try
+			{
 
-            using (StreamReader sr = new StreamReader(JSonFile))
-            {
-                using (JsonReader reader = new JsonTextReader(sr))
-                {
-                    setting = serializer.Deserialize<Settings>(reader);
+				using (StreamReader sr = new StreamReader (JSonFile))
+				{
+					using (JsonReader reader = new JsonTextReader (sr))
+					{
+						setting = serializer.Deserialize<Settings> (reader);
 #if (DEBUG)
-                    string output = JsonConvert.SerializeObject(setting, jsonSerializerSettings);
-                    Debug.WriteLine(output);
+						string output = JsonConvert.SerializeObject (setting, jsonSerializerSettings);
+						Debug.WriteLine (output);
 #endif
-                    if (!string.IsNullOrWhiteSpace(setting.strLogFile))
-                    {
-                        writeLog = true;
-                        WriteToLogFile("Start Operations", "");
-                    }
-                }
-            }
+						if (!string.IsNullOrWhiteSpace (setting.strLogFile))
+						{
+							writeLog = true;
+							WriteToLogFile ("Start Operations", "");
+#if (DEBUG)
+							//Console.WriteLine (output);
+#endif
+						}
+					}
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine (string.Format("{0}\r\n{1}",ex.Message, ex.StackTrace));
+				if (ex.Data.Count > 0)
+				{
+					foreach (var item in ex.Data)
+					{
+						Console.WriteLine (item.ToString ());
+					}
+				}
+			}
         }
 
         static void WriteToLogFile(string MessageFormat, params string[] vals)
@@ -320,15 +355,23 @@ namespace checkInstalledSoftware
                     }
                 }
 
-                using (StreamWriter sw = File.AppendText(setting.strLogFile))
-                {
-                    if (vals != null && vals.Length > 0)
-                    {
-                        sw.Write(string.Format("{0}: {1}\r\n", DateTime.Now.ToString(), string.Format(MessageFormat, vals)));
-                    }
-                    else
-                        sw.Write(string.Format("{0}: {1}\r\n", DateTime.Now.ToString(), MessageFormat));
-                }
+				try
+				{
+					using (StreamWriter sw = File.AppendText (setting.strLogFile))
+					{
+						if (vals != null && vals.Length > 0)
+						{
+							sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));
+						}
+						else
+							sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), MessageFormat));
+					}
+				}
+				catch (Exception)
+				{
+
+					throw;
+				}
             }
         }
 
