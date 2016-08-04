@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.IO;
 using System.Threading.Tasks;
+using System.Threading;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 
@@ -20,7 +21,7 @@ namespace checkInstalledSoftware
     {
         //	Rückgabewerte für Nagios
         #region Eigenschaften
-        enum nagiosStatus
+        public enum nagiosStatus
         {
             Ok = 0,
             Warning = 1,
@@ -41,85 +42,112 @@ namespace checkInstalledSoftware
 		static int exportCount = 0;
 
         public static bool writeLog { get; private set; } = true;
-        #endregion
+		public static bool isWriteExport { get; private set; } = false;
 
-        static int Main(string[] args)
+		public static int Status
+		{
+			get
+			{
+				return status;
+			}
+
+			set
+			{
+				status = value;
+			}
+		}
+		#endregion
+
+		static int Main(string[] args)
         {
             dicApplications = new Dictionary<string, AppInformation>();
             string[] cmdLine;
 
-            if ((cmdLine = Environment.GetCommandLineArgs()).Length > 1)
-            {
-#if (DEBUG)
-				//Console.WriteLine (Environment.CommandLine);
-#endif
-				string strTemp = cmdLine [1];
-				if(Path.IsPathRooted(strTemp))
+			try
+			{
+
+				if ((cmdLine = Environment.GetCommandLineArgs ()).Length > 1)
 				{
-					if (File.Exists(cmdLine [1]))
+#if (DEBUG)
+					//Console.WriteLine (Environment.CommandLine);
+#endif
+					string strTemp = cmdLine [1];
+					if (Path.IsPathRooted (strTemp))
 					{
-						strJSONKonfigFile = cmdLine [1];
+						if (File.Exists (cmdLine [1]))
+						{
+							strJSONKonfigFile = cmdLine [1];
+						}
 					}
+					else
+					{
+						strJSONKonfigFile = Path.Combine (new string [] { AppDomain.CurrentDomain.BaseDirectory, cmdLine [1] });
+					}
+				}
+
+				if (File.Exists (strJSONKonfigFile))
+				{
+					// Laden der Parameter aus der Konfiguration
+					ReadJSonKonfiguration (strJSONKonfigFile);
+#if (DEBUG)
+					//Console.WriteLine ("\r\n#####\r\n" + strJSONKonfigFile + "\r\n#####\r\n");
+#endif
+
+					WriteToLogFile (string.Format ("Start der Anwendung"), null);
+					WriteToLogFile ("Speicherverbrauch: {0}", Environment.WorkingSet.ToString ());
+
+					WriteToLogFile ("Laden der Such und Filter Bedingungen: {0}", new string [] { strJSONKonfigFile });
 				}
 				else
 				{
-					strJSONKonfigFile = Path.Combine (new string [] { AppDomain.CurrentDomain.BaseDirectory, cmdLine [1]});
+					Console.WriteLine ("Es konnte keine Datei mit Einstellungen geladen werden|File=" + strJSONKonfigFile);
+					//return (int) nagiosStatus.Warning;
+					//Exit (exitCode);
+					Environment.Exit ((int)nagiosStatus.Critical);
 				}
-            }
-
-            if (File.Exists(strJSONKonfigFile))
-            {
-                // Laden der Parameter aus der Konfiguration
-                ReadJSonKonfiguration(strJSONKonfigFile);
-#if (DEBUG)
-				//Console.WriteLine ("\r\n#####\r\n" + strJSONKonfigFile + "\r\n#####\r\n");
-#endif
-
-				WriteToLogFile (string.Format("Start der Anwendung"), null);
-                WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
-
-                WriteToLogFile("Laden der Such und Filter Bedingungen: {0}", new string[] {strJSONKonfigFile});
-            }
-            else
-            {
-                Console.WriteLine("Es konnte keine Datei mit Einstellungen geladen werden|File=" + strJSONKonfigFile);
-                return (int)nagiosStatus.Warning;
-            }
 
 
-            WriteToLogFile("Lesen der Registry UNINSTALL Einträge", null);
-            WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
-            if (Environment.Is64BitOperatingSystem)
-            {
-                //  32 & 64 BIT Registry Bereiche lesen
-                GetRegistryInformation(false);
-                GetRegistryInformation(true); 
-            }
-            else
-            {
-                //  nur 32 Bit vorhanden
-                GetRegistryInformation(false);
-            }
+				WriteToLogFile ("Lesen der Registry UNINSTALL Einträge", null);
+				WriteToLogFile ("Speicherverbrauch: {0}", Environment.WorkingSet.ToString ());
+				if (Environment.Is64BitOperatingSystem)
+				{
+					//  32 & 64 BIT Registry Bereiche lesen
+					GetRegistryInformation (false);
+					GetRegistryInformation (true);
+				}
+				else
+				{
+					//  nur 32 Bit vorhanden
+					GetRegistryInformation (false);
+				}
 
-            WriteToLogFile("Exportieren der Daten", null);
-            WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
-            ExportData();
-			if (setting.bUseOutputInNagios)
-			{
-				Console.WriteLine ("OK Es wurden {0} Anwendungen gefunden", exportCount);
-				return (int) nagiosStatus.Ok;
+				WriteToLogFile ("Exportieren der Daten", null);
+				WriteToLogFile ("Speicherverbrauch: {0}", Environment.WorkingSet.ToString ());
+				ExportData ();
+				
+				if (setting.bUseOutputInNagios)
+				{
+					Console.WriteLine ("OK Es wurden {0} Anwendungen gefunden", exportCount);
+					Status = (int) nagiosStatus.Ok;
+				}
+				else
+				{
+					Console.WriteLine ("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString (), exportCount);
+
+					Console.WriteLine ("Taste drücken zum fortsetzen ! ...");
+					Console.ReadKey ();
+				}
 			}
-			else
+			catch ( ThreadAbortException taex)
 			{
-				Console.WriteLine ("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString (), exportCount);
-
-				Console.WriteLine ("Taste drücken zum fortsetzen ! ...");
-				Console.ReadKey ();
+				Console.WriteLine (taex.Message);
+				Console.WriteLine (taex.InnerException.Message);
+				return Status;
 			}
 #if (DEBUG)
 #endif
 
-            return (int)nagiosStatus.Ok;
+            return Status;
         }
 
         static void GetRegistryInformation(bool is64Bit)
@@ -213,11 +241,11 @@ namespace checkInstalledSoftware
 
         static void ExportData()
         {
-			if (File.Exists (setting.strExportFileName + ".txt"))
-			{
-				File.Delete (setting.strExportFileName + ".txt");
-				//setting.bAppend2Logfile = true;
-			}
+			//if (File.Exists (setting.strExportFileName + ".txt"))
+			//{
+			//	File.Delete (setting.strExportFileName + ".txt");
+			//	//setting.bAppend2Logfile = true;
+			//}
 
 			if (dicApplications.Count > 0 )
             {
@@ -226,7 +254,9 @@ namespace checkInstalledSoftware
 				//    Debug.WriteLine(name);
 				//}
 				int i = 0;
-                foreach (AppInformation ai in dicApplications.Values)
+				WriteToExportFile (string.Format ("{0}: Installierte Software / Suchfilter: {1} / System:  {2}\r\n", DateTime.Now.ToString (), setting.strSearchTag, Environment.MachineName));
+
+				foreach (AppInformation ai in dicApplications.Values)
                 {
                     string strTemp;
 					/*
@@ -273,7 +303,7 @@ namespace checkInstalledSoftware
                 }
                 WriteToLogFile("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString(), i.ToString());
 				exportCount = i;
-
+				isWriteExport = false;
 			}
         }
 
@@ -377,29 +407,66 @@ namespace checkInstalledSoftware
 
 		static void WriteToExportFile (string MessageFormat, params string [] vals)
 		{
+			string tempExport = Path.Combine (new [] { setting.strExportTartgetDir, setting.strExportFileName + ".txt" });
+			if (Path.IsPathRooted (setting.strExportTartgetDir))
+			{
+				if (File.Exists (tempExport))
+				{
+					tempExport = tempExport;
+				}
+			}
+			else
+			{
+				tempExport = Path.Combine (new string [] { AppDomain.CurrentDomain.BaseDirectory, setting.strExportTartgetDir, setting.strExportFileName });
+			}
+
+			/* Wenn kein Verzeichnis angegeben wurde, wird das Verzeichnis der Anwendung verwendet */
+			if (string.IsNullOrWhiteSpace (setting.strExportTartgetDir))
+				setting.strExportTartgetDir = AppDomain.CurrentDomain.BaseDirectory;
+
+			/* Wenn kein Dateiname angegeben wurde, Export abrechen */
+			if (string.IsNullOrWhiteSpace(setting.strExportFileName))
+			{
+				WriteToLogFile ("Es wurde kein Dateiname für den Export angegeben");
+				Console.WriteLine("Warn: Es wurde kein Dateiname für den Export angegeben");
+
+				throw new ExportNoFileException("Export: Es wurde kein Dateiname für den Export angegeben");
+			}
+
 			if (!string.IsNullOrWhiteSpace (setting.strExportTartgetDir) && Directory.Exists(setting.strExportTartgetDir))
 			{
-				//if (!setting.bAppend2Logfile)
-				//{
-				//	if (File.Exists (setting.strExportFileName + ".txt"))
-				//	{
-				//		File.Delete (setting.strExportFileName + ".txt");
-				//		//setting.bAppend2Logfile = true;
-				//	}
-				//}
-
-				using (StreamWriter sw = File.AppendText (Path.Combine (new string [] { setting.strExportTartgetDir, setting.strExportFileName + ".txt" })))
+				if (!isWriteExport)
 				{
-					if (vals != null && vals.Length > 0)
+					if (File.Exists (tempExport))
 					{
-						//sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));
-						sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));    //Zeitstempel wird nicht geschrieben
+						File.Delete (tempExport);
+						
 					}
-					else
+					isWriteExport = true;
+				}
+
+				try
+				{
+					//using (StreamWriter sw = File.AppendText (Path.Combine (new string [] { setting.strExportTartgetDir, setting.strExportFileName + ".txt" })))
+					using (StreamWriter sw = File.AppendText (tempExport))
 					{
-						sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), MessageFormat));      //Zeitstempel wird nicht geschrieben
-																											//sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), MessageFormat));
+						if (vals != null && vals.Length > 0)
+						{
+							//sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));
+							sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));    //Zeitstempel wird nicht geschrieben
+						}
+						else
+						{
+							sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), MessageFormat));      //Zeitstempel wird nicht geschrieben
+																												//sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), MessageFormat));
+						}
 					}
+				}
+				catch (Exception ex)
+				{
+
+					Console.WriteLine (ex.Message);
+					System.Threading.Thread.CurrentThread.Abort ();
 				}
 			}
 		}
@@ -554,5 +621,20 @@ namespace checkInstalledSoftware
 
 		[JsonProperty (PropertyName = "UseOutputInNagios")]
 		public bool bUseOutputInNagios { get; set; } = false;
+	}
+
+	public class ExportNoFileException : Exception
+	{
+		public ExportNoFileException () { }
+		public ExportNoFileException (string message) : base (message)
+		{
+			Program.Status = (int)Program.nagiosStatus.Critical;
+			//Thread.CurrentThread.Abort ();
+			Environment.Exit ((int) Program.nagiosStatus.Critical);
+		}
+		public ExportNoFileException (string message, Exception inner) : base (message, inner) { }
+		protected ExportNoFileException (
+		  System.Runtime.Serialization.SerializationInfo info,
+		  System.Runtime.Serialization.StreamingContext context) : base (info, context) { }
 	}
 }
