@@ -118,7 +118,7 @@ namespace checkInstalledSoftware
 				else
 				{
 					//  nur 32 Bit vorhanden
-					GetRegistryInformation (false);
+					GetRegistryInformation (true);
 				}
 
 				WriteToLogFile ("Exportieren der Daten", null);
