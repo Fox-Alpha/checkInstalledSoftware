@@ -154,8 +154,21 @@ namespace checkInstalledSoftware
         {
             //key.View = RegistryView.Registry64;
 
-            string activePath = string.Format(RegPath2Uninstall, is64Bit ? "" : RegPath2Uninstall32);
-            RegistryKey key = Registry.LocalMachine.OpenSubKey(activePath,false);
+            // string activePath = string.Format(RegPath2Uninstall, is64Bit ? "" : RegPath2Uninstall32);
+            // RegistryKey key = Registry.LocalMachine.OpenSubKey(activePath,false);
+			RegistryKey key;
+			
+			//	Wenn die Anwendung kein 64Bit Process ist, kann diese nur mit Umweg auf den 64Bit Bereich der Registry zugreifen
+			if (is64Bit && !Environment.Is64BitProcess) 
+			{
+	            activePath = string.Format(RegPath2Uninstall, "");
+	            key = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(activePath,false);				
+			}
+			else
+			{
+	            activePath = string.Format(RegPath2Uninstall, is64Bit ? "" : RegPath2Uninstall32);
+	            key = Registry.LocalMachine.OpenSubKey(activePath,false);
+			}
             string[] valueNames;
 
             if (key != null && key.SubKeyCount > 0)
