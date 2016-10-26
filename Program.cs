@@ -41,8 +41,8 @@ namespace checkInstalledSoftware
         static Settings setting;
 		static int exportCount = 0;
 
-        public static bool writeLog { get; private set; } = true;
-		public static bool isWriteExport { get; private set; } = false;
+		public static bool writeLog { get; set; } // C# 6.0 = true;
+		public static bool isWriteExport { get; set; } // C# 6.0 = false;
 
 		public static int Status
 		{
@@ -60,6 +60,9 @@ namespace checkInstalledSoftware
 
 		static int Main(string[] args)
         {
+			writeLog = true;
+			isWriteExport = false;
+			
             dicApplications = new Dictionary<string, AppInformation>();
             string[] cmdLine;
 
@@ -112,13 +115,29 @@ namespace checkInstalledSoftware
 				if (Environment.Is64BitOperatingSystem)
 				{
 					//  32 & 64 BIT Registry Bereiche lesen
+//					GetRegistryInformation (false);
+//					GetRegistryInformation (true);
+					
+					//  32 & 64 BIT Registry Bereiche lesen
+					Debug.WriteLine ("... 32 Bit Registry");
+					WriteToLogFile ("... 32 Bit Registry", null);
+					Debug.WriteLine ("-------------------------------------------");
+					Console.WriteLine ("... 32 Bit Registry");
 					GetRegistryInformation (false);
+					Debug.WriteLine ("... 64 Bit Registry");
+					WriteToLogFile ("... 64 Bit Registry", null);
+					Debug.WriteLine ("-------------------------------------------");
+					Console.WriteLine ("... 64 Bit Registry");
 					GetRegistryInformation (true);
 				}
 				else
 				{
 					//  nur 32 Bit vorhanden
+					Console.WriteLine ("... 32 Bit Registry");
 					GetRegistryInformation (true);
+
+				//  nur 32 Bit vorhanden
+//					GetRegistryInformation (true);
 				}
 
 				WriteToLogFile ("Exportieren der Daten", null);
@@ -157,6 +176,7 @@ namespace checkInstalledSoftware
             // string activePath = string.Format(RegPath2Uninstall, is64Bit ? "" : RegPath2Uninstall32);
             // RegistryKey key = Registry.LocalMachine.OpenSubKey(activePath,false);
 			RegistryKey key;
+			string activePath = string.Empty;
 			
 			//	Wenn die Anwendung kein 64Bit Process ist, kann diese nur mit Umweg auf den 64Bit Bereich der Registry zugreifen
 			if (is64Bit && !Environment.Is64BitProcess) 
@@ -606,34 +626,34 @@ namespace checkInstalledSoftware
         public string strSearchPattern { get; set; }
 
         [JsonProperty(PropertyName = "UseRegEx", Required = Required.Always)]
-        public bool bUseRegEx { get; set; } = false;
+        public bool bUseRegEx { get; set; } // C# 6.0  = false;
 
         [JsonProperty(PropertyName = "CaseSensitive")]
-        public bool bCaseSensitive { get; set; } = false;
+        public bool bCaseSensitive { get; set; } // C# 6.0  = false;
 
         [JsonProperty(PropertyName = "ExportTargetDir")]
-        public string strExportTartgetDir { get; set; } = "";   // TODO: Verzeichnis der Anwendung benutzen
+        public string strExportTartgetDir { get; set; } // C# 6.0  = "";   // TODO: Verzeichnis der Anwendung benutzen
 
         [JsonProperty(PropertyName = "ExportFileName", Required = Required.Always)]
-        public string strExportFileName { get; set; } = "ExportInstalledApplications";     //   TODO: Anwendungsungsname als Default
+        public string strExportFileName { get; set; } // C# 6.0  = "ExportInstalledApplications";     //   TODO: Anwendungsungsname als Default
 
         [JsonProperty(PropertyName = "ExportFileFormat", Required = Required.Always)]
         public List<string> listFormat; // { get; set; } = new List<string>(){ "TXT" };
 
         [JsonProperty(PropertyName = "Log", Required = Required.Always)]
-        public string strLogFile { get; set; } = "";
+        public string strLogFile { get; set; } // C# 6.0  = "";
 
         [JsonProperty(PropertyName = "AppendLog", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        public bool bAppend2Logfile { get; set; } = false;
+        public bool bAppend2Logfile { get; set; } // C# 6.0  = false;
 
         [JsonProperty(PropertyName = "LogSuffix", Required = Required.AllowNull)]
-        public string strLogSuffix { get; set; } = "";
+        public string strLogSuffix { get; set; } // C# 6.0  = "";
 
         [JsonProperty(PropertyName = "LogPrefix", Required = Required.AllowNull)]
-        public string strLogPrefix { get; set; } = "";
+        public string strLogPrefix { get; set; } // C# 6.0  = "";
 
 		[JsonProperty (PropertyName = "UseOutputInNagios")]
-		public bool bUseOutputInNagios { get; set; } = false;
+		public bool bUseOutputInNagios { get; set; } // C# 6.0  = false;
 	}
 
 	public class ExportNoFileException : Exception
