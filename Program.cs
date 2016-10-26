@@ -206,7 +206,8 @@ namespace checkInstalledSoftware
 
         static void Add2Dictionary(string[] valueList, string RegPath)
         {
-            RegistryKey key = Registry.LocalMachine.OpenSubKey(RegPath, false);
+//            RegistryKey key = Registry.LocalMachine.OpenSubKey(RegPath, false);
+ 			RegistryKey key = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(RegPath,false);
             AppInformation appInf;
             Dictionary<string, string> dicTemp;
             string valueType = "";
@@ -310,7 +311,8 @@ namespace checkInstalledSoftware
 						}
 						else if (!setting.bUseRegEx && !string.IsNullOrWhiteSpace (strTemp))
 						{
-							if (strTemp == setting.strSearchPattern)
+							//	if (strTemp == setting.strSearchPattern)
+							if(Regex.Match(strTemp, setting.strSearchPattern).Success)
 							{
 								WriteToExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, ai.appPublisher }));
 								i++;
