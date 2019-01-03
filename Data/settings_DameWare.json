@@ -1,22 +1,21 @@
 {
-	/* Parameter fÃ¼r die Suche */
+	/* Parameter für die Suche */
 	/* "Name":"", "Version":"", "Publisher":"" */
-	/* TODO: Option 'ALL' Alle SchlÃ¼sselwerte durchsuchen */
+	/* TODO: Option 'ALL' Alle Schlüsselwerte durchsuchen */
 	"Search":"Publisher",
 
-	/* TODO:	Optional leeres Pattern fÃ¼r Ausgabe aller installierten Anwendungen */
+	/* TODO:	Optional leeres Pattern für Ausgabe aller installierten Anwendungen */
 	/*			UseRegEx darf dann nicht 'TRUE' sein */
-	"Pattern":"(A|a)lpha(\\s|[-]{0,1})(C|c)om",
+	/*"Pattern":"(A|a)lpha(\\s|[-]{0,1})(C|c)om",*/
+	"Pattern":"SolarWinds",
 	/* "Pattern":"alpha com", */
 	/* TODO: Vergleich ohne RegEx */
-	"UseRegEx":"True",
+	"UseRegEx":"False",
 	"CaseSensitive":"False",
 
-	/* Vorgaben fÃ¼r die Exportierten Daten */
+	/* Vorgaben für die Exportierten Daten */
 	/* "ExportTargetDir":".\\Data\\", */
-	/*"ExportTargetDir":"c:\\Temp\\checkInstalledSoftware\\",*/
-	"ExportTargetDir":"\\\\HH-SV-IT-005\\Neustart\\Hamburg\\HH-WS-SD-003\\",
-	
+	"ExportTargetDir":"c:\\Temp\\checkInstalledSoftware\\",
 	"ExportFileName":"InstallierteSoftware",
 	"ExportFileFormat": [
 		"TXT"
@@ -25,8 +24,7 @@
 
 	/* Schreiben einer Logdatei, Pfad kann relativ zum RootDir sein '\\' oder zur Application .\\Data\\*/
 	/* Wenn nicht angegeben und UseOutputInNagios == False, dann wird in die Console geschrieben */
-	/*"Log":"c:\\temp\\checkInstalledSoftware\\checkInstalledSoftware.Log.txt",*/
-	"Log":"\\\\HH-SV-IT-005\\Neustart\\Hamburg\\HH-WS-SD-003\\checkInstalledSoftware.Log.txt",
+	"Log":"c:\\temp\\checkInstalledSoftware\\checkInstalledSoftwarel.Log.txt",
 	"AppendLog":"false",
 
 	/*	TODO: Option Log2Console */
@@ -38,5 +36,5 @@
 	"LogPrefix":"",
 
 	/* Output Optionen */
-	"UseOutputInNagios":"True"
+	"UseOutputInNagios":"False"
 }
