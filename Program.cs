@@ -181,6 +181,7 @@ namespace checkInstalledSoftware
 				return Status;
 			}
 #if (DEBUG)
+            //Console.Read();
 #endif
 
             return Status;
@@ -459,22 +460,9 @@ namespace checkInstalledSoftware
 
 		static void WriteToExportFile (string MessageFormat, params string [] vals)
 		{
-			string tempExport = Path.Combine (new [] { setting.strExportTartgetDir, setting.strExportFileName + ".txt" });
-			if (Path.IsPathRooted (setting.strExportTartgetDir))
-			{
-				if (File.Exists (tempExport))
-				{
-					tempExport = tempExport;
-				}
-			}
-			else
-			{
-				tempExport = Path.Combine (new string [] { AppDomain.CurrentDomain.BaseDirectory, setting.strExportTartgetDir, setting.strExportFileName });
-			}
-
 			/* Wenn kein Verzeichnis angegeben wurde, wird das Verzeichnis der Anwendung verwendet */
 			if (string.IsNullOrWhiteSpace (setting.strExportTartgetDir))
-				setting.strExportTartgetDir = AppDomain.CurrentDomain.BaseDirectory;
+				setting.strExportTartgetDir = Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, "\\Data" });
 
 			/* Wenn kein Dateiname angegeben wurde, Export abrechen */
 			if (string.IsNullOrWhiteSpace(setting.strExportFileName))
@@ -485,14 +473,29 @@ namespace checkInstalledSoftware
 				throw new ExportNoFileException("Export: Es wurde kein Dateiname für den Export angegeben");
 			}
 
+            string tempExport = "";
+
+
+			if (Path.IsPathRooted (setting.strExportTartgetDir))
+			{
+				//if (File.Exists (tempExport))
+				//{
+				tempExport = Path.Combine(new[] { setting.strExportTartgetDir, setting.strExportFileName + ".txt" });
+                //}
+			}
+			else
+			{
+				tempExport = Path.Combine (new string [] { AppDomain.CurrentDomain.BaseDirectory, setting.strExportTartgetDir, setting.strExportFileName });
+			}
+
+
 			if (!string.IsNullOrWhiteSpace (setting.strExportTartgetDir) && Directory.Exists(setting.strExportTartgetDir))
 			{
 				if (!isWriteExport)
 				{
 					if (File.Exists (tempExport))
 					{
-						File.Delete (tempExport);
-						
+						File.Delete (tempExport);						
 					}
 					isWriteExport = true;
 				}
@@ -657,7 +660,7 @@ namespace checkInstalledSoftware
         public string strExportFileName { get; set; } // C# 6.0  = "ExportInstalledApplications";     //   TODO: Anwendungsungsname als Default
 
         [JsonProperty(PropertyName = "ExportFileFormat", Required = Required.Always)]
-        public List<string> listFormat; // { get; set; } = new List<string>(){ "TXT" };
+        public List<string> listFormat { get; set; } // = new List<string>(){ "TXT" };
 
         [JsonProperty(PropertyName = "Log", Required = Required.Always)]
         public string strLogFile { get; set; } // C# 6.0  = "";
