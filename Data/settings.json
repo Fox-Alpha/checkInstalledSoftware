@@ -1,40 +1,46 @@
 {
-	/* Parameter für die Suche */
-	/* "Name":"", "Version":"", "Publisher":"" */
-	/* TODO: Option 'ALL' Alle Schlüsselwerte durchsuchen */
-	"Search":"Publisher",
+    /* Parameter für die Suche */
+    /* "Name":"", "Version":"", "Publisher":"" */
+    /* TODO: Option 'ALL' Alle Schlüsselwerte durchsuchen */
+    "Search": "Publisher",
 
-	/* TODO:	Optional leeres Pattern für Ausgabe aller installierten Anwendungen */
-	/*			UseRegEx darf dann nicht 'TRUE' sein */
-	"Pattern":"(A|a)lpha(\\s|[-]{0,1})(C|c)om",
-	/* "Pattern":"alpha com", */
-	/* TODO: Vergleich ohne RegEx */
-	"UseRegEx":"True",
-	"CaseSensitive":"False",
+    /* TODO:	Optional leeres Pattern für Ausgabe aller installierten Anwendungen */
+    /*			UseRegEx darf dann nicht 'TRUE' sein */
+    "Pattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",
+    /* "Pattern":"alpha com", */
+    /* TODO: Vergleich ohne RegEx */
+    "UseRegEx": "True",
+    "CaseSensitive": "False",
 
-	/* Vorgaben für die Exportierten Daten */
-	/* "ExportTargetDir":".\\Data\\", */
-	"ExportTargetDir":"c:\\Temp\\checkInstalledSoftware\\",
-	"ExportFileName":"InstallierteSoftware",
-	"ExportFileFormat": [
-		"TXT"
-		/* TODO: "CSV", "XML", "JSON" */
-		/* SQLite (.sqlite.db) */
-	],
+    "SearchFileSystem": "true",
+    "SearchFolderPattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",
+    "SearchFilePath": [ "exe" ],
+    "SearchSubFolder": [ "c:\\Programme", "c:\\programme (x86)" ],
+    "SearchFolderDepth": 2,
 
-	/* Schreiben einer Logdatei, Pfad kann relativ zum RootDir sein '\\' oder zur Application .\\Data\\*/
-	/* Wenn nicht angegeben und UseOutputInNagios == False, dann wird in die Console geschrieben */
-	"Log":"c:\\temp\\checkInstalledSoftware\\checkInstalledSoftwarel.Log.txt",
-	"AppendLog":"false",
+    /* Vorgaben für die Exportierten Daten */
+    /* "ExportTargetDir":".\\Data\\", */
+    "ExportTargetDir": "c:\\Temp\\checkInstalledSoftware\\",
+    "ExportFileName": "InstallierteSoftware",
+    "ExportFileFormat": [
+        "TXT"
+        /* TODO: "CSV", "XML", "JSON" */
+        /* SQLite (.sqlite.db) */
+    ],
 
-	/*	TODO: Option Log2Console */
-	/*	Schreibt Informelle Ausgaben in die Console */
-	/*"Log2Console":"True",
+    /* Schreiben einer Logdatei, Pfad kann relativ zum RootDir sein '\\' oder zur Application .\\Data\\*/
+    /* Wenn nicht angegeben und UseOutputInNagios == False, dann wird in die Console geschrieben */
+    "Log": "c:\\temp\\checkInstalledSoftware\\checkInstalledSoftwarel.Log.txt",
+    "AppendLog": "false",
+
+    /*	TODO: Option Log2Console */
+    /*	Schreibt Informelle Ausgaben in die Console */
+    /*"Log2Console":"True",
 	
 	/* Noch nicht implementiert */
-	"LogSuffix":"",
-	"LogPrefix":"",
+    "LogSuffix": "",
+    "LogPrefix": "",
 
-	/* Output Optionen */
-	"UseOutputInNagios":"True"
+    /* Output Optionen */
+    "UseOutputInNagios": "False"
 }
