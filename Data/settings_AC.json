@@ -1,10 +1,10 @@
 {
-	/* Parameter für die Suche */
+	/* Parameter fÃ¼r die Suche */
 	/* "Name":"", "Version":"", "Publisher":"" */
-	/* TODO: Option 'ALL' Alle Schlüsselwerte durchsuchen */
+	/* TODO: Option 'ALL' Alle SchlÃ¼sselwerte durchsuchen */
 	"Search":"Publisher",
 
-	/* TODO:	Optional leeres Pattern für Ausgabe aller installierten Anwendungen */
+	/* TODO:	Optional leeres Pattern fÃ¼r Ausgabe aller installierten Anwendungen */
 	/*			UseRegEx darf dann nicht 'TRUE' sein */
 	"Pattern":"(A|a)lpha(\\s|[-]{0,1})(C|c)om",
 	/* "Pattern":"alpha com", */
@@ -12,19 +12,21 @@
 	"UseRegEx":"True",
 	"CaseSensitive":"False",
 
-	/* Vorgaben für die Exportierten Daten */
+	/* Vorgaben fÃ¼r die Exportierten Daten */
 	/* "ExportTargetDir":".\\Data\\", */
-	"ExportTargetDir":"c:\\Temp\\checkInstalledSoftware\\",
+	/*"ExportTargetDir":"c:\\Temp\\checkInstalledSoftware\\",*/
+	"ExportTargetDir":"\\\\HH-SV-IT-005\\Neustart\\Hamburg\\HH-WS-SD-003\\",
+	
 	"ExportFileName":"InstallierteSoftware",
 	"ExportFileFormat": [
 		"TXT"
 		/* TODO: "CSV", "XML", "JSON" */
-		/* SQLite (.sqlite.db) */
 	],
 
 	/* Schreiben einer Logdatei, Pfad kann relativ zum RootDir sein '\\' oder zur Application .\\Data\\*/
 	/* Wenn nicht angegeben und UseOutputInNagios == False, dann wird in die Console geschrieben */
-	"Log":"c:\\temp\\checkInstalledSoftware\\checkInstalledSoftwarel.Log.txt",
+	/*"Log":"c:\\temp\\checkInstalledSoftware\\checkInstalledSoftware.Log.txt",*/
+	"Log":"\\\\HH-SV-IT-005\\Neustart\\Hamburg\\HH-WS-SD-003\\checkInstalledSoftware.Log.txt",
 	"AppendLog":"false",
 
 	/*	TODO: Option Log2Console */

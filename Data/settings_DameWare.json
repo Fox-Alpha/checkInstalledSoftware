@@ -6,10 +6,11 @@
 
 	/* TODO:	Optional leeres Pattern für Ausgabe aller installierten Anwendungen */
 	/*			UseRegEx darf dann nicht 'TRUE' sein */
-	"Pattern":"(A|a)lpha(\\s|[-]{0,1})(C|c)om",
+	/*"Pattern":"(A|a)lpha(\\s|[-]{0,1})(C|c)om",*/
+	"Pattern":"SolarWinds",
 	/* "Pattern":"alpha com", */
 	/* TODO: Vergleich ohne RegEx */
-	"UseRegEx":"True",
+	"UseRegEx":"False",
 	"CaseSensitive":"False",
 
 	/* Vorgaben für die Exportierten Daten */
@@ -19,7 +20,6 @@
 	"ExportFileFormat": [
 		"TXT"
 		/* TODO: "CSV", "XML", "JSON" */
-		/* SQLite (.sqlite.db) */
 	],
 
 	/* Schreiben einer Logdatei, Pfad kann relativ zum RootDir sein '\\' oder zur Application .\\Data\\*/
@@ -36,5 +36,5 @@
 	"LogPrefix":"",
 
 	/* Output Optionen */
-	"UseOutputInNagios":"True"
+	"UseOutputInNagios":"False"
 }
