@@ -157,6 +157,20 @@ namespace checkInstalledSoftware
 //					GetRegistryInformation (true);
 				}
 
+
+                // Wenn Aktiv, auch Verzeichnisse durchsuchen
+                if (setting.bSearchFileSystem)
+                {
+                    // Verzeichnisse durchsucht werden sollen, dann müssen die weiterenOptionen gegeben sein.
+                    if (string.IsNullOrWhiteSpace(setting.strSearchFolderPattern)) { };
+
+                    if (setting.lstSearchFilePath.Count >= 1) { };
+
+                    if (setting.lstSearchFileExt.Count >= 1) { };
+
+                    if (setting.iSearchFolderDepth) { };
+                }
+
 				WriteToLogFile ("Exportieren der Daten", null);
 				WriteToLogFile ("Speicherverbrauch: {0}", Environment.WorkingSet.ToString ());
 				ExportData ();
@@ -181,7 +195,6 @@ namespace checkInstalledSoftware
 				return Status;
 			}
 #if (DEBUG)
-            //Console.Read();
 #endif
 
             return Status;
@@ -676,7 +689,30 @@ namespace checkInstalledSoftware
 
 		[JsonProperty (PropertyName = "UseOutputInNagios")]
 		public bool bUseOutputInNagios { get; set; } // C# 6.0  = false;
-	}
+
+        [JsonProperty(PropertyName = "SearchFileSystem", Required = Required.Always)]
+        public bool bSearchFileSystem { get; set; } // C# 6.0  = false;
+
+        [JsonProperty(PropertyName = "SearchFolderPattern", Required = Required.AllowNull)]
+        public string strSearchFolderPattern { get; set; } // C# 6.0  = "";
+
+        [JsonProperty(PropertyName = "SearchFilePath", Required = Required.AllowNull)]
+        public List<string> lstSearchFilePath { get; set; } // = new List<string>(){ "TXT" };
+
+        [JsonProperty(PropertyName = "SearchFileExt", Required = Required.Always)]
+        public List<string> lstSearchFileExt { get; set; } // = new List<string>(){ "TXT" };
+
+        [JsonProperty(PropertyName = "SearchFolderDepth", Required = Required.AllowNull)]
+        public bool iSearchFolderDepth { get; set; } // C# 6.0  = false;
+
+        /*
+         "SearchFileSystem": "true",
+        "SearchFolderPattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",
+        "SearchFileExt": [ "exe" ],
+        "SearchSubFolder": [ "c:\\Programme", "c:\\programme (x86)" ],
+        "SearchFolderDepth": 2,
+        */
+    }
 
 	public class ExportNoFileException : Exception
 	{
