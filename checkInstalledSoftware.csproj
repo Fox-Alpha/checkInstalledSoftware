@@ -77,6 +77,7 @@
     <None Include="Data\settings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Data\settings_AC.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup />
