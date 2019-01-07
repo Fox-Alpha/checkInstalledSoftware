@@ -14,7 +14,7 @@
 
     "SearchFileSystem": "true",
     "SearchFolderPattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",
-    "SearchFilePath": [ "exe" ],
+    "SearchFileExt": [ "exe" ],
     "SearchSubFolder": [ "c:\\Programme", "c:\\programme (x86)" ],
     "SearchFolderDepth": 2,
 
