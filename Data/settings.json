@@ -1,10 +1,10 @@
 {
-    /* Parameter für die Suche */
+    /* Parameter fï¿½r die Suche */
     /* "Name":"", "Version":"", "Publisher":"" */
-    /* TODO: Option 'ALL' Alle Schlüsselwerte durchsuchen */
+    /* TODO: Option 'ALL' Alle Schlï¿½sselwerte durchsuchen */
     "Search": "Publisher",
 
-    /* TODO:	Optional leeres Pattern für Ausgabe aller installierten Anwendungen */
+    /* TODO:	Optional leeres Pattern fï¿½r Ausgabe aller installierten Anwendungen */
     /*			UseRegEx darf dann nicht 'TRUE' sein */
     "Pattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",
     /* "Pattern":"alpha com", */
@@ -15,10 +15,11 @@
     "SearchFileSystem": "true",
     "SearchFolderPattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",
     "SearchFileExt": [ "exe" ],
-    "SearchSubFolder": [ "c:\\Programme", "c:\\programme (x86)" ],
+    "SearchSubFolder": "False",
+    "SearchFilePath": [ "c:/Programme", "c:/programme (x86)" ],
     "SearchFolderDepth": 2,
 
-    /* Vorgaben für die Exportierten Daten */
+    /* Vorgaben fï¿½r die Exportierten Daten */
     /* "ExportTargetDir":".\\Data\\", */
     "ExportTargetDir": "c:\\Temp\\checkInstalledSoftware\\",
     "ExportFileName": "InstallierteSoftware",
