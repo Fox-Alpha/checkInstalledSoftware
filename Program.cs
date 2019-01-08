@@ -164,7 +164,39 @@ namespace checkInstalledSoftware
                     // Verzeichnisse durchsucht werden sollen, dann müssen die weiterenOptionen gegeben sein.
                     if (string.IsNullOrWhiteSpace(setting.strSearchFolderPattern)) { };
 
-                    if (setting.lstSearchFilePath.Count >= 1) { };
+                    if (setting.lstSearchFilePath.Count >= 1)
+                    {
+                        List<string> validPath = new List<string>();                        
+
+                        foreach (var path in setting.lstSearchFilePath)
+                        {
+                            if (!Path.IsPathRooted(path))
+                            {
+                                validPath.Add(Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, path }));                                
+                            }
+                            else
+                            {
+                                validPath.Add(path);
+                                char[] badFileChar = Path.GetInvalidFileNameChars();
+                                char[] BadPathChar = Path.GetInvalidPathChars();
+
+                                //string tmpPath = Regex.Replace(path, , string.Empty);
+
+                                // Pattern in GetDirectories() und in GetFiles() unterstützen keine RegEx Ausdrücke
+                                // Alternativ eine Liste von Directories vorher erstellen und gegen RegEx Ausfilten.
+                                
+                                Directory.GetDirectories(path, /*setting.strSearchFolderPattern*/ String.Empty, setting.bSearchSubFolder ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
+                            }
+
+                            if (!Directory.Exists(path))
+                            {
+                                validPath.Remove(path);
+                                continue;
+                            }
+
+                            ApplicationFileList(path);
+                        }
+                    }
 
                     if (setting.lstSearchFileExt.Count >= 1) { };
 
@@ -198,6 +230,66 @@ namespace checkInstalledSoftware
 #endif
 
             return Status;
+        }
+
+        static void ApplicationFileList(string PathToSearch)
+        {
+            DirectoryInfo diTop = new DirectoryInfo(PathToSearch);
+
+            try
+            {
+                //foreach (var fi in diTop.EnumerateFiles())
+                //{
+                //    try
+                //    {
+                //        // Display each file over 10 MB;
+                //        if (fi.Length > 10000000)
+                //        {
+                //            Console.WriteLine("{0}\t\t{1}", fi.FullName, fi.Length.ToString("N0"));
+                //        }
+                //    }
+                //    catch (UnauthorizedAccessException UnAuthTop)
+                //    {
+                //        Console.WriteLine("{0}", UnAuthTop.Message);
+                //    }
+                //}
+
+                List<FileVersionInfo> fviApplication = new List<FileVersionInfo>();
+
+                foreach (var di in diTop.EnumerateDirectories(string.IsNullOrEmpty(PathToSearch) ? "*" : setting.strSearchFolderPattern ))
+                {
+                    try
+                    {
+                        foreach (var fi in di.EnumerateFiles("*.exe", SearchOption.AllDirectories))
+                        {
+                            try
+                            {
+                                fviApplication.Add(FileVersionInfo.GetVersionInfo(fi.FullName));
+                            }
+                            catch (UnauthorizedAccessException UnAuthFile)
+                            {
+                                Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
+                            }
+                        }
+                    }
+                    catch (UnauthorizedAccessException UnAuthSubDir)
+                    {
+                        Console.WriteLine("UnAuthSubDir: {0}", UnAuthSubDir.Message);
+                    }
+                }
+            }
+            catch (DirectoryNotFoundException DirNotFound)
+            {
+                Console.WriteLine("{0}", DirNotFound.Message);
+            }
+            catch (UnauthorizedAccessException UnAuthDir)
+            {
+                Console.WriteLine("UnAuthDir: {0}", UnAuthDir.Message);
+            }
+            catch (PathTooLongException LongPath)
+            {
+                Console.WriteLine("{0}", LongPath.Message);
+            }
         }
 
         static void GetRegistryInformation(bool is64Bit)
@@ -701,6 +793,9 @@ namespace checkInstalledSoftware
 
         [JsonProperty(PropertyName = "SearchFileExt", Required = Required.Always)]
         public List<string> lstSearchFileExt { get; set; } // = new List<string>(){ "TXT" };
+
+        [JsonProperty(PropertyName = "SearchSubFolder")]
+        public bool bSearchSubFolder { get; set; } // C# 6.0  = false;
 
         [JsonProperty(PropertyName = "SearchFolderDepth", Required = Required.AllowNull)]
         public bool iSearchFolderDepth { get; set; } // C# 6.0  = false;
