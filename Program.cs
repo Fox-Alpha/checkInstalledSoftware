@@ -161,46 +161,7 @@ namespace checkInstalledSoftware
                 // Wenn Aktiv, auch Verzeichnisse durchsuchen
                 if (setting.bSearchFileSystem)
                 {
-                    // Verzeichnisse durchsucht werden sollen, dann müssen die weiterenOptionen gegeben sein.
-                    if (string.IsNullOrWhiteSpace(setting.strSearchFolderPattern)) { };
-
-                    if (setting.lstSearchFilePath.Count >= 1)
-                    {
-                        List<string> validPath = new List<string>();                        
-
-                        foreach (var path in setting.lstSearchFilePath)
-                        {
-                            if (!Path.IsPathRooted(path))
-                            {
-                                validPath.Add(Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, path }));                                
-                            }
-                            else
-                            {
-                                validPath.Add(path);
-                                char[] badFileChar = Path.GetInvalidFileNameChars();
-                                char[] BadPathChar = Path.GetInvalidPathChars();
-
-                                //string tmpPath = Regex.Replace(path, , string.Empty);
-
-                                // Pattern in GetDirectories() und in GetFiles() unterstützen keine RegEx Ausdrücke
-                                // Alternativ eine Liste von Directories vorher erstellen und gegen RegEx Ausfilten.
-                                
-                                Directory.GetDirectories(path, /*setting.strSearchFolderPattern*/ String.Empty, setting.bSearchSubFolder ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly);
-                            }
-
-                            if (!Directory.Exists(path))
-                            {
-                                validPath.Remove(path);
-                                continue;
-                            }
-
-                            ApplicationFileList(path);
-                        }
-                    }
-
-                    if (setting.lstSearchFileExt.Count >= 1) { };
-
-                    if (setting.iSearchFolderDepth) { };
+                    DurchsucheUnterverzeichnisseNachApplicationen();
                 }
 
 				WriteToLogFile ("Exportieren der Daten", null);
@@ -230,6 +191,71 @@ namespace checkInstalledSoftware
 #endif
 
             return Status;
+        }
+
+        private static async void DurchsucheUnterverzeichnisseNachApplicationen()
+        {
+            // Verzeichnisse durchsucht werden sollen, dann müssen die weiterenOptionen gegeben sein.
+            //if (string.IsNullOrWhiteSpace(setting.strSearchFolderPattern)) { };
+
+            if (setting.lstSearchFilePath.Count >= 1)
+            {
+                List<string> validPath = new List<string>();
+                DurchsucheVerzeichnisse Verzeichnisse;
+
+                //validPath = await Task.Factory.StartNew(Verzeichnisse.LeseUnterverzeichnis(@"c:\temp");
+                
+
+                foreach (var path in setting.lstSearchFilePath)
+                {
+                    try
+                    {
+                        if (!Path.IsPathRooted(path))
+                        {
+                            if (Directory.Exists(path))
+                            {
+                                Verzeichnisse = new DurchsucheVerzeichnisse(Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, path }));
+                                validPath.AddRange(await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
+                            }
+                                //validPath.AddRange(await Directory.GetDirectories(Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, path })).ToList());
+                                
+                        }
+                        else
+                        {
+                            if (Directory.Exists(path))
+                            {
+                                //var temp = await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss());
+                                //validPath.AddRange((List<string>)temp.toArray());
+
+                                Verzeichnisse = new DurchsucheVerzeichnisse(path);
+                                validPath.AddRange(await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
+                            }
+                        }
+                    }
+                    catch (UnauthorizedAccessException UnAuthFile)
+                    {
+                        Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
+                        Console.ReadLine();
+                    }
+                }
+                if (validPath.Count > 0)
+                {
+                    foreach (var dir in validPath)
+                    {
+                        if (Regex.IsMatch(dir, setting.strSearchFolderPattern))
+                        {
+                            //Aufruf über Async ... Await ????
+                            //ApplicationFileList(path);
+                            Console.WriteLine(dir);
+                        }
+                    }
+                }
+            }
+
+            //if (setting.lstSearchFileExt.Count >= 1) { };
+
+            if (setting.iSearchFolderDepth) { };
+
         }
 
         static void ApplicationFileList(string PathToSearch)
@@ -632,10 +658,36 @@ namespace checkInstalledSoftware
 		}
 
 	}
+    class DurchsucheVerzeichnisse
+    {
+        string SubFolder{ get; set; } = "";
 
-	class AppInformation
+        public DurchsucheVerzeichnisse(string Folder)
+        {
+            if (!string.IsNullOrWhiteSpace(Folder))
+            {
+                SubFolder = Folder;
+            }
+        }
+
+        //public List<string> LeseUnterVerzeichnisse()
+        //{
+        //    return new List<string> { "Test1", "Test3" } ;
+        //}
+
+        public List<string> LeseUnterverzeichniss()
+        {
+            return Directory.GetDirectories(SubFolder, "*", SearchOption.TopDirectoryOnly).ToList();
+            //return new List<string> { "Test 123" };
+        }
+
+
+    }
+
+    class AppInformation
     {
         //  Klasse zum aufnehmen der Informationen aus der Registry
+        //  TODO: Erweitern um Hashwert
 
         private string _appRegKey;
 
