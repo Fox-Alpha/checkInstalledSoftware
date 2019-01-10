@@ -6,7 +6,8 @@
 
     /* TODO:	Optional leeres Pattern f�r Ausgabe aller installierten Anwendungen */
     /*			UseRegEx darf dann nicht 'TRUE' sein */
-    "Pattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",
+    /* "Pattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",*/
+    "Pattern": "Gigabyte",
     /* "Pattern":"alpha com", */
     /* TODO: Vergleich ohne RegEx */
     "UseRegEx": "True",
@@ -16,7 +17,8 @@
     "SearchFolderPattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",
     "SearchFileExt": [ "exe" ],
     "SearchSubFolder": "False",
-    "SearchFilePath": [ "c:/Programme", "c:/programme (x86)" ],
+    //"SearchFilePath": [ "c:\\Programme", "\"c:\\programme (x86)\"" ],
+    "SearchFilePath": [ "c:\\temp", "c:\\Users", "%ProgramFiles%"  ],
     "SearchFolderDepth": 2,
 
     /* Vorgaben f�r die Exportierten Daten */
