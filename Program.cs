@@ -761,6 +761,9 @@ namespace checkInstalledSoftware
                     appVersion = string.IsNullOrWhiteSpace(strTemp) ? "_0.0.0.0_" : strTemp;                    
                 }
 
+                if (string.IsNullOrWhiteSpace(appHashValue))
+                    appHashValue = CalculateMD5Hash("{appName+appVersion+appPublisher}");
+
                 if (string.IsNullOrWhiteSpace(appName))
                     Debug.WriteLine("Kein Name angegeben");
 
