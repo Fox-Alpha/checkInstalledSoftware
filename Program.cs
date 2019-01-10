@@ -13,6 +13,7 @@ using Microsoft.Win32;
 using CommandLine;
 using CommandLine.Text;
 using Newtonsoft.Json;
+using System.Security.Cryptography;
 
 /*
 	TODO:
@@ -204,23 +205,29 @@ namespace checkInstalledSoftware
                 DurchsucheVerzeichnisse Verzeichnisse;
 
                 //validPath = await Task.Factory.StartNew(Verzeichnisse.LeseUnterverzeichnis(@"c:\temp");
-                
 
                 foreach (var path in setting.lstSearchFilePath)
                 {
-                    try
+                    if (!Path.IsPathRooted(path))
                     {
-                        if (!Path.IsPathRooted(path))
+                        if (Directory.Exists(path))
                         {
-                            if (Directory.Exists(path))
+                            try
                             {
                                 Verzeichnisse = new DurchsucheVerzeichnisse(Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, path }));
                                 validPath.AddRange(await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
                             }
-                                //validPath.AddRange(await Directory.GetDirectories(Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, path })).ToList());
-                                
+                            catch (UnauthorizedAccessException UnAuthFile)
+                            {
+                                Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
+                                Console.ReadLine();
+                            }
                         }
-                        else
+                            //validPath.AddRange(await Directory.GetDirectories(Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, path })).ToList());
+                    }
+                    else
+                    {
+                        try
                         {
                             if (Directory.Exists(path))
                             {
@@ -231,12 +238,18 @@ namespace checkInstalledSoftware
                                 validPath.AddRange(await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
                             }
                         }
+                        catch (UnauthorizedAccessException UnAuthFile)
+                        {
+                            //Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
+                            //Console.ReadLine();
+                            //continue;
+                        }
+                        catch (Exception ex)
+                        {
+                            //throw new Exception("Durchsuchen eines Verzeichnisses nicht möglich: {ex.message}");
+                        }
                     }
-                    catch (UnauthorizedAccessException UnAuthFile)
-                    {
-                        Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
-                        Console.ReadLine();
-                    }
+                    //continue;
                 }
                 if (validPath.Count > 0)
                 {
@@ -254,7 +267,7 @@ namespace checkInstalledSoftware
 
             //if (setting.lstSearchFileExt.Count >= 1) { };
 
-            if (setting.iSearchFolderDepth) { };
+            //if (setting.iSearchFolderDepth) { };
 
         }
 
@@ -657,7 +670,7 @@ namespace checkInstalledSoftware
 			}
 		}
 
-	}
+    }
     class DurchsucheVerzeichnisse
     {
         string SubFolder{ get; set; } = "";
@@ -677,7 +690,16 @@ namespace checkInstalledSoftware
 
         public List<string> LeseUnterverzeichniss()
         {
-            return Directory.GetDirectories(SubFolder, "*", SearchOption.TopDirectoryOnly).ToList();
+            try
+            {
+                return Directory.GetDirectories(SubFolder, "*", SearchOption.TopDirectoryOnly).ToList();
+            }
+            catch (Exception x)
+            {
+                Console.WriteLine(x.Message);
+                return null;
+            }
+            
             //return new List<string> { "Test 123" };
         }
 
@@ -698,9 +720,9 @@ namespace checkInstalledSoftware
         }
 
 		public string appPublisher { get; set; }
+        public string appHashValue { get; private set; }
 
-		private string _appName;
-
+        private string _appName;
         public string appName
         {
             get { return _appName; }
@@ -708,13 +730,13 @@ namespace checkInstalledSoftware
         }
 
         private string _appVersion;
-
         public string appVersion
         {
             get { return _appVersion; }
             set { _appVersion = value; }
         }
 
+        Dictionary<string, string> appRegistry;
         public Dictionary<string, string> AppRegistry
         {
             get { return appRegistry; }
@@ -746,20 +768,44 @@ namespace checkInstalledSoftware
             }
         }
 
-        Dictionary<string, string> appRegistry;
-
         public AppInformation()
         {
             appRegistry = new Dictionary<string, string>();
         }
 
-        public AppInformation(string _Name, string _Version, string _Key)
+        public AppInformation(string _Name, string _Version, string _Key, string _publisher = "")
         {
             appName = _Name;
             appVersion = _Version;
             appRegKey = _Key;
+            appPublisher = _publisher;
+
+            appHashValue = CalculateMD5Hash("{appName+appVersion+appPublisher}");
 
             appRegistry = new Dictionary<string, string>();
+        }
+
+        private string CalculateMD5Hash(string input)
+        {
+
+            // step 1, calculate MD5 hash from input
+
+            MD5 md5 = MD5.Create();
+
+            byte[] inputBytes = Encoding.ASCII.GetBytes(input);
+
+            byte[] hash = md5.ComputeHash(inputBytes);
+
+            // step 2, convert byte array to hex string
+
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < hash.Length; i++)
+            {
+                sb.Append(hash[i].ToString("{0:x2}"));
+            }
+
+            return sb.ToString();
         }
 
         ~AppInformation()
