@@ -919,7 +919,7 @@ namespace checkInstalledSoftware
                 }
 
                 if (string.IsNullOrWhiteSpace(appHashValue))
-                    appHashValue = CalculateMD5Hash("{appName+appVersion+appPublisher}");
+                    appHashValue = CalculateMD5Hash(string.Format("{0}{1}{2}", appName, appVersion, appPublisher));
 
                 if (string.IsNullOrWhiteSpace(appName))
                     Debug.WriteLine("Kein Name angegeben");
@@ -940,7 +940,7 @@ namespace checkInstalledSoftware
             appRegKey = _Key;
             appPublisher = _publisher;
 
-            appHashValue = CalculateMD5Hash("{appName+appVersion+appPublisher}");
+            appHashValue = CalculateMD5Hash(string.Format("{0}{1}{2}", appName, appVersion, appPublisher));
 
             appRegistry = new Dictionary<string, string>();
         }
