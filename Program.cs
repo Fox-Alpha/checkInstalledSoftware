@@ -86,8 +86,6 @@ namespace checkInstalledSoftware
 
 			try
             {
-                WriteToLogFile("Exportieren der Daten", null);
-                WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
 
                 if ((cmdLine = Environment.GetCommandLineArgs()).Length > 1)
                 {
@@ -107,14 +105,18 @@ namespace checkInstalledSoftware
                     else
                     {
                         Console.WriteLine("Die angegebene Konfigurationsdatei konnte nicht gefunden werden. Diese scheint nicht zu existieren. {strTemp}");
+                        WriteToLogFile("Die angegebene Konfigurationsdatei konnte nicht gefunden werden. Diese scheint nicht zu existieren. {0}", new string [] { strTemp});
                         return (int)nagiosStatus.Critical;
                     }
                 }
-
-                WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
                 
                 // Lesen der Settings aus der JSON Datei
                 ReadSettingsFromJSONConfigFile();
+                // TODO: STatus prüfen und ggf abrechen
+
+                WriteToLogFile("Exportieren der Daten", null);
+                WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
+                WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
 
                 // Lesen der Uninstall Einträger der Registry
                 ReadApplicatiosnFromRegistry();
@@ -154,11 +156,11 @@ namespace checkInstalledSoftware
 
         private static void ReadSettingsFromJSONConfigFile()
         {
-            WriteToLogFile("Einlesen der Konfiguration", null);
             if (File.Exists(strJSONKonfigFile))
             {
                 // Laden der Parameter aus der Konfiguration
-                if(!ReadJSonKonfigurationFile(strJSONKonfigFile))
+
+                if (!ReadJSonKonfigurationFile(strJSONKonfigFile))
                 {
                     WriteToLogFile("Fehler beim laden der Einstellungen: {0}", new string[] { strJSONKonfigFile });
                     status = (int)nagiosStatus.Critical;
@@ -275,7 +277,8 @@ namespace checkInstalledSoftware
                         {
                             //Aufruf über Async ... Await ????
                             //ApplicationFileList(path);
-                            Console.WriteLine(dir);
+                            // Console.WriteLine(dir);
+                            ApplicationFileList(dir);
                         }
                     }
                 }
@@ -311,11 +314,12 @@ namespace checkInstalledSoftware
 
                 List<FileVersionInfo> fviApplication = new List<FileVersionInfo>();
 
-                foreach (var di in diTop.EnumerateDirectories(string.IsNullOrEmpty(PathToSearch) ? "*" : setting.strSearchFolderPattern ))
-                {
+                //foreach (var di in diTop.EnumerateDirectories(string.IsNullOrEmpty(PathToSearch) ? "*" : setting.strSearchFolderPattern ))
+                //foreach (var di in diTop.EnumerateDirectories("*", SearchOption.TopDirectoryOnly))
+                //{
                     try
                     {
-                        foreach (var fi in di.EnumerateFiles("*.exe", SearchOption.AllDirectories))
+                        foreach (var fi in diTop.EnumerateFiles("*.exe", SearchOption.AllDirectories))
                         {
                             try
                             {
@@ -331,7 +335,7 @@ namespace checkInstalledSoftware
                     {
                         Console.WriteLine("UnAuthSubDir: {0}", UnAuthSubDir.Message);
                     }
-                }
+                //}
             }
             catch (DirectoryNotFoundException DirNotFound)
             {
@@ -467,12 +471,68 @@ namespace checkInstalledSoftware
 				foreach (AppInformation ai in dicApplications.Values)
                 {
                     string strTemp;
-					/*
+                    /*
 					 * TODO: Filter nutzung
                      * TODO: Refactoring für Ausgabeformatliste
 					 */
 
-					if (!string.IsNullOrWhiteSpace(setting.strSearchTag) && !string.IsNullOrWhiteSpace (setting.strSearchPattern))
+                    //##### Refavtor #####
+
+                    //Prüfen ob ein Filterobject in der Konfiguration angegeben wurde. z.B. Publisher, Versionm, AppName, etc.
+                    ai.AppRegistry.TryGetValue(setting.strSearchTag, out strTemp);
+
+
+                    if (!string.IsNullOrWhiteSpace(strTemp))
+                    {
+                        // Per Setting, ein RegEx auf den Registrywert anwenden
+                        if (setting.bUseRegEx)
+                        {
+                            // Wert per RegEx gefunden ?
+                            // Vergleich Case Senstitiv ? Settings !
+                            if (Regex.IsMatch(strTemp, setting.strSearchPattern, setting.bCaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase))
+                            {
+                                if (setting.listFormat.Count > 0)
+                                {
+                                    foreach (var exoFormat in setting.listFormat)
+                                    {
+                                        switch (exoFormat)
+                                        {
+                                            case "TXT":
+                                                WriteToTxtExportFile(new[] { ai.appName, ai.appVersion, ai.appPublisher });
+                                                break;
+                                            case "CSV":
+                                                break;
+                                                // Weitere Formate
+                                            case "XML":
+                                            case "SQL":
+                                                break;
+                                            default:
+                                                WriteToLogFile(string.Format("Fehler: Das angegebene Dateiformat wird für den Export nicht unterstützt: {0}", exoFormat));
+                                                Console.WriteLine(string.Format("Fehler: Das angegebene Dateiformat wird für den Export nicht unterstützt: {0}", exoFormat));
+                                                break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Debug.WriteLine(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
+                        WriteToLogFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
+                        //	TODO: Alle Exportformate beachten
+                        WriteToTxtExportFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
+                        return;
+                    }
+
+                    WriteToLogFile("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString(), i.ToString());
+                    exportCount = i;
+                    isWriteExport = false;
+
+                    return;
+                    //##### ######## #####
+
+                    if (!string.IsNullOrWhiteSpace(setting.strSearchTag) && !string.IsNullOrWhiteSpace (setting.strSearchPattern))
 					{
 						ai.AppRegistry.TryGetValue (setting.strSearchTag, out strTemp);
 
@@ -480,8 +540,9 @@ namespace checkInstalledSoftware
 						{
 							if(Regex.IsMatch (strTemp, setting.strSearchPattern, setting.bCaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase))
 							{
-								WriteToTxtExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, ai.appPublisher }));
-								i++;
+                                //WriteToTxtExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, ai.appPublisher }));
+                                WriteToTxtExportFile(new[] { ai.appName, ai.appVersion, ai.appPublisher });
+                                i++;
 							}
 						}
 						else if (!setting.bUseRegEx && !string.IsNullOrWhiteSpace (strTemp))
@@ -489,8 +550,9 @@ namespace checkInstalledSoftware
 							//	if (strTemp == setting.strSearchPattern)
 							if(Regex.Match(strTemp, setting.strSearchPattern).Success)
 							{
-								WriteToTxtExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, ai.appPublisher }));
-								i++;
+								//WriteToTxtExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, ai.appPublisher }));
+                                WriteToTxtExportFile(new[] { ai.appName, ai.appVersion, ai.appPublisher });
+                                i++;
 							}
 						}
 
@@ -500,8 +562,9 @@ namespace checkInstalledSoftware
 						Debug.WriteLine (string.Format ("Fehler: Es wurde kein Suchbereich angegeben"));
 						WriteToLogFile (string.Format ("Fehler: Es wurde kein Suchbereich angegeben"));
 						//	TODO: Alle Exportformate beachten
-						WriteToTxtExportFile (string.Format ("Fehler: Es wurde kein Suchbereich angegeben"));
-						return;
+						//WriteToTxtExportFile (string.Format ("Fehler: Es wurde kein Suchbereich angegeben"));
+                        WriteToTxtExportFile(new[] { "Fehler: Es wurde kein Suchbereich angegeben" });
+                        return;
 					}
 
 					/*#####*/
@@ -511,9 +574,6 @@ namespace checkInstalledSoftware
                     Debug.WriteLine(string.Format("{2} - {0} - {1}", ai.appName, ai.appVersion, strTemp));
 					//	TODO: Alle Exportformate beachten
                 }
-                WriteToLogFile("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString(), i.ToString());
-				exportCount = i;
-				isWriteExport = false;
 			}
         }
 
@@ -564,8 +624,10 @@ namespace checkInstalledSoftware
 						}
 					}
 				}
-			}
-			catch (Exception ex)
+                WriteToLogFile("Konfiguration wurde eingelesen", null);
+
+            }
+            catch (Exception ex)
 			{
 				Console.WriteLine (string.Format("{0}\r\n{1}",ex.Message, ex.StackTrace));
 				if (ex.Data.Count > 0)
@@ -621,8 +683,9 @@ namespace checkInstalledSoftware
             }
         }
 
-		static void WriteToTxtExportFile (string MessageFormat, params string [] vals)
-		{
+		//static void WriteToTxtExportFile (string MessageFormat, params string [] vals)
+        static void WriteToTxtExportFile(params string[] vals)
+        {
 			/* Wenn kein Verzeichnis angegeben wurde, wird das Verzeichnis der Anwendung verwendet */
 			if (string.IsNullOrWhiteSpace (setting.strExportTartgetDir))
 				setting.strExportTartgetDir = Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, "\\Data" });
@@ -668,14 +731,17 @@ namespace checkInstalledSoftware
 					//using (StreamWriter sw = File.AppendText (Path.Combine (new string [] { setting.strExportTartgetDir, setting.strExportFileName + ".txt" })))
 					using (StreamWriter sw = File.AppendText (tempExport))
 					{
-						if (vals != null && vals.Length > 0)
+                        //  Wenn mehr als ein Parameter übergeben wurde, dann als string "joinen"
+						if (vals != null && vals.Length > 1)
 						{
-							//sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));
-							sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));    //Zeitstempel wird nicht geschrieben
+                            //sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));
+                            //sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));    //Zeitstempel wird nicht geschrieben
+                            sw.Write(string.Join(" - ", vals));
 						}
-						else
-						{
-							sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), MessageFormat));      //Zeitstempel wird nicht geschrieben
+                        //  Ansonsten nur den ersten Paremeter ausgeben
+						else if (vals != null && vals.Length == 1)
+                        {
+							sw.Write (string.Format ("{0}\r\n", vals[0]));      //Zeitstempel wird nicht geschrieben
 																												//sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), MessageFormat));
 						}
 					}
@@ -755,6 +821,11 @@ namespace checkInstalledSoftware
                     System.Threading.Thread.CurrentThread.Abort();
                 }
             }
+        }
+
+        static void WriteToSQLiteExportFile(string MessageFormat, params string[] vals)
+        {
+
         }
     }
     class DurchsucheVerzeichnisse
