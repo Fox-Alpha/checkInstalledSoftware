@@ -433,7 +433,7 @@ namespace checkInstalledSoftware
                     value = string.Format("[{0}] {1}", valueType, key.GetValue(str).ToString());
                     dicTemp.Add(str, value);
                 }
-                appInf.AppRegistry = dicTemp;
+                appInf.appRegistry = dicTemp;
 
                 int i = 0;
                 string appname = appInf.appName;
@@ -479,7 +479,7 @@ namespace checkInstalledSoftware
                     //##### Refavtor #####
 
                     //Prüfen ob ein Filterobject in der Konfiguration angegeben wurde. z.B. Publisher, Versionm, AppName, etc.
-                    ai.AppRegistry.TryGetValue(setting.strSearchTag, out strTemp);
+                    ai.appRegistry.TryGetValue(setting.strSearchTag, out strTemp);
 
 
                     if (!string.IsNullOrWhiteSpace(strTemp))
@@ -534,7 +534,7 @@ namespace checkInstalledSoftware
 
                     if (!string.IsNullOrWhiteSpace(setting.strSearchTag) && !string.IsNullOrWhiteSpace (setting.strSearchPattern))
 					{
-						ai.AppRegistry.TryGetValue (setting.strSearchTag, out strTemp);
+						ai.appRegistry.TryGetValue (setting.strSearchTag, out strTemp);
 
 						if (setting.bUseRegEx&& !string.IsNullOrWhiteSpace(strTemp))
 						{
@@ -569,7 +569,7 @@ namespace checkInstalledSoftware
 
 					/*#####*/
 
-					ai.AppRegistry.TryGetValue("Publisher", out strTemp);
+					ai.appRegistry.TryGetValue("Publisher", out strTemp);
 
                     Debug.WriteLine(string.Format("{2} - {0} - {1}", ai.appName, ai.appVersion, strTemp));
 					//	TODO: Alle Exportformate beachten
@@ -866,10 +866,9 @@ namespace checkInstalledSoftware
     class AppInformation
     {
         //  Klasse zum aufnehmen der Informationen aus der Registry
-        //  TODO: Erweitern um Hashwert
+        public bool appIsRegistryPath { get; set; }
 
         private string _appRegKey;
-
         public string appRegKey
         {
             get { return _appRegKey; }
@@ -893,10 +892,10 @@ namespace checkInstalledSoftware
             set { _appVersion = value; }
         }
 
-        Dictionary<string, string> appRegistry;
-        public Dictionary<string, string> AppRegistry
+        Dictionary<string, string> _appRegistry;
+        public Dictionary<string, string> appRegistry
         {
-            get { return appRegistry; }
+            get { return _appRegistry; }
             set
             {
                 string strTemp;
@@ -924,7 +923,7 @@ namespace checkInstalledSoftware
                 if (string.IsNullOrWhiteSpace(appName))
                     Debug.WriteLine("Kein Name angegeben");
 
-                appRegistry = value;
+                _appRegistry = value;
             }
         }
 
@@ -933,12 +932,14 @@ namespace checkInstalledSoftware
             appRegistry = new Dictionary<string, string>();
         }
 
-        public AppInformation(string _Name, string _Version, string _Key, string _publisher = "")
+        public AppInformation(string _Name, string _Version, string _Key, string _publisher = "", bool _appIsRegistryPath = true)
         {
             appName = _Name;
             appVersion = _Version;
             appRegKey = _Key;
             appPublisher = _publisher;
+
+            appIsRegistryPath = _appIsRegistryPath;
 
             appHashValue = CalculateMD5Hash(string.Format("{0}{1}{2}", appName, appVersion, appPublisher));
 
@@ -970,10 +971,10 @@ namespace checkInstalledSoftware
 
         ~AppInformation()
         {
-            if (appRegistry != null)
+            if (_appRegistry != null)
             {
-                appRegistry.Clear();
-                appRegistry = null;
+                _appRegistry.Clear();
+                _appRegistry = null;
             }
         }
     }
