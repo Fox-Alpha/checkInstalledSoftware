@@ -17,14 +17,14 @@ using System.Security.Cryptography;
 
 /*
 	TODO:
-		- Durchsuchen von Pfaden im Dateisystem, zum Beispiel c:\Programme\[PATTERN]\*oder c:\programme (x86)\[PATTERN]\*
-		--	Durchsuvchen der Unterverzeichnisse zum Beispiel nach .exe Anwendungen
+	>	- Durchsuchen von Pfaden im Dateisystem, zum Beispiel c:\Programme\[PATTERN]\*oder c:\programme (x86)\[PATTERN]\*
+	>	--	Durchsuvchen der Unterverzeichnisse zum Beispiel nach .exe Anwendungen
 		--- Auslesen der Dateiinformationen und abgleich mit den Registry Werten um Dubletten zu vermeiden
 		- Export als CSV datei
 		- Export in SQLite DB File
 		-- Verwendung von EntityFramework ???
 		-- Durchsuchen der SQLite nach einem [PATTERN]
-		+ AppInformation: Erweitern um das Feld, Installations Pfad
+	>	+ AppInformation: Erweitern um das Feld, Installations Pfad
 		# Anwendung für "Man in the Middle" erstellen. ASP .NET Core unter Linux
 		-- Nimmt die Ergebnisse der Clients an und schreibt diese in die SQLite DB
 		-- Nimmt Anfragen aus dem Browser oder einer GUI Anwendung an um Ergebnisse Abzufragen
@@ -217,15 +217,10 @@ namespace checkInstalledSoftware
 
         private static async Task DurchsucheUnterverzeichnisseNachApplicationenAsync()
         {
-            // Verzeichnisse durchsucht werden sollen, dann müssen die weiterenOptionen gegeben sein.
-            //if (string.IsNullOrWhiteSpace(setting.strSearchFolderPattern)) { };
-
             if (setting.lstSearchFilePath.Count >= 1)
             {
                 List<string> validPath = new List<string>();
                 DurchsucheVerzeichnisse Verzeichnisse;
-
-                //validPath = await Task.Factory.StartNew(Verzeichnisse.LeseUnterverzeichnis(@"c:\temp");
 
                 foreach (var path in setting.lstSearchFilePath)
                 {
@@ -238,8 +233,6 @@ namespace checkInstalledSoftware
                                 Verzeichnisse = new DurchsucheVerzeichnisse(Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, path }));
 
                                 searchTasks.Add(Task <List<string> >.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
-                                    //await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss);
-                                //validPath.AddRange(await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
                             }
                             catch (UnauthorizedAccessException UnAuthFile)
                             {
@@ -247,7 +240,6 @@ namespace checkInstalledSoftware
                                 Console.ReadLine();
                             }
                         }
-                            //validPath.AddRange(await Directory.GetDirectories(Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, path })).ToList());
                     }
                     else
                     {
@@ -255,11 +247,8 @@ namespace checkInstalledSoftware
                         {
                             if (Directory.Exists(path))
                             {
-                                //var temp = await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss());
-                                //validPath.AddRange((List<string>)temp.toArray());
-
                                 Verzeichnisse = new DurchsucheVerzeichnisse(path);
-                                //validPath.AddRange(await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
+
                                 searchTasks.Add(Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
                             }
                         }
@@ -289,18 +278,15 @@ namespace checkInstalledSoftware
                     {
                         if (Regex.IsMatch(dir, setting.strSearchFolderPattern))
                         {
-                            //Aufruf über Async ... Await ????
-                            //ApplicationFileList(path);
-                            // Console.WriteLine(dir);
                             ApplicationFileList(dir);
                         }
                     }
                 }
             }
+            //  TODO:
+            //  if (setting.lstSearchFileExt.Count >= 1) { };
 
-            //if (setting.lstSearchFileExt.Count >= 1) { };
-
-            //if (setting.iSearchFolderDepth) { };
+            //  if (setting.iSearchFolderDepth) { };
 
         }
 
@@ -312,27 +298,6 @@ namespace checkInstalledSoftware
 
             try
             {
-                //foreach (var fi in diTop.EnumerateFiles())
-                //{
-                //    try
-                //    {
-                //        // Display each file over 10 MB;
-                //        if (fi.Length > 10000000)
-                //        {
-                //            Console.WriteLine("{0}\t\t{1}", fi.FullName, fi.Length.ToString("N0"));
-                //        }
-                //    }
-                //    catch (UnauthorizedAccessException UnAuthTop)
-                //    {
-                //        Console.WriteLine("{0}", UnAuthTop.Message);
-                //    }
-                //}
-
-               
-
-                //foreach (var di in diTop.EnumerateDirectories(string.IsNullOrEmpty(PathToSearch) ? "*" : setting.strSearchFolderPattern ))
-                //foreach (var di in diTop.EnumerateDirectories("*", SearchOption.TopDirectoryOnly))
-                //{
                 try
                 {
                     foreach (var fi in diTop.EnumerateFiles("*.exe", SearchOption.TopDirectoryOnly))
@@ -357,8 +322,6 @@ namespace checkInstalledSoftware
                             fviApplication.Add(fvi);
 
                             Add2Dictionary(dicTemp, fi.FullName, false);
-
-                            //dicTemp.Clear();
                         }
                         catch (UnauthorizedAccessException UnAuthFile)
                         {
@@ -370,8 +333,6 @@ namespace checkInstalledSoftware
                 {
                     Console.WriteLine("UnAuthSubDir: {0}", UnAuthSubDir.Message);
                 }
-
-                //}
             }
             catch (DirectoryNotFoundException DirNotFound)
             {
@@ -463,7 +424,6 @@ namespace checkInstalledSoftware
             }
         }
 
-        //static void Add2Dictionary(string[] valueList, string RegPath, bool isRegistryKey=true)
         static void Add2Dictionary(Dictionary<string, string> dicTemp, string RegPath, bool isRegistryKey = true)
         {
             //  TODO: Try ... Catch bei Registry Zugriff
@@ -502,18 +462,8 @@ namespace checkInstalledSoftware
 
         static void ExportData()
         {
-			//if (File.Exists (setting.strExportFileName + ".txt"))
-			//{
-			//	File.Delete (setting.strExportFileName + ".txt");
-			//	//setting.bAppend2Logfile = true;
-			//}
-
 			if (dicApplications.Count > 0 )
             {
-				//foreach (string name in dicApplications.Keys)
-				//{
-				//    Debug.WriteLine(name);
-				//}
 				int i = 0;
                 bool Header = true;
                 foreach (AppInformation ai in dicApplications.Values)
@@ -524,7 +474,7 @@ namespace checkInstalledSoftware
                      * TODO: Refactoring für Ausgabeformatliste
 					 */
 
-                    //##### Refavtor #####
+                    //##### Refactor #####
 
                     //Prüfen ob ein Filterobject in der Konfiguration angegeben wurde. z.B. Publisher, Versionm, AppName, etc.
                     ai.appRegistry.TryGetValue(setting.strSearchTag, out strTemp);
@@ -556,7 +506,7 @@ namespace checkInstalledSoftware
                                                 break;
                                             case "CSV":
                                                 break;
-                                            // Weitere Formate
+                                            // Weitere Formate, noch nicht verwendet
                                             case "XML":
                                             case "SQL":
                                                 break;
@@ -574,7 +524,6 @@ namespace checkInstalledSoftware
                     {
                         Debug.WriteLine(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
                         WriteToLogFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
-                        //	TODO: Alle Exportformate beachten
                         WriteToTxtExportFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
                         return;
                     }
@@ -583,9 +532,6 @@ namespace checkInstalledSoftware
                 WriteToLogFile("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString(), i.ToString());
                 exportCount = i;
                 isWriteExport = false;
-
-                //Debug.WriteLine(string.Format("{2} - {0} - {1}", ai.appName, ai.appVersion, strTemp));
-				//	TODO: Alle Exportformate beachten
 			}
         }
 
@@ -612,11 +558,8 @@ namespace checkInstalledSoftware
 
             JsonSerializer serializer = JsonSerializer.CreateDefault(jsonSerializerSettings);
 
-			//StreamWriter sw = new StreamWriter (@"data\exampleOut.json");
-			//JsonWriter writer = new JsonTextWriter (sw);
 			try
 			{
-
 				using (StreamReader sr = new StreamReader (JSonFile))
 				{
 					using (JsonReader reader = new JsonTextReader (sr))
@@ -637,7 +580,6 @@ namespace checkInstalledSoftware
 					}
 				}
                 WriteToLogFile("Konfiguration wurde eingelesen", null);
-
             }
             catch (Exception ex)
 			{
@@ -695,7 +637,6 @@ namespace checkInstalledSoftware
             }
         }
 
-		//static void WriteToTxtExportFile (string MessageFormat, params string [] vals)
         static void WriteToTxtExportFile(params string[] vals)
         {
 			/* Wenn kein Verzeichnis angegeben wurde, wird das Verzeichnis der Anwendung verwendet */
@@ -740,7 +681,6 @@ namespace checkInstalledSoftware
 
 				try
 				{
-					//using (StreamWriter sw = File.AppendText (Path.Combine (new string [] { setting.strExportTartgetDir, setting.strExportFileName + ".txt" })))
 					using (StreamWriter sw = File.AppendText (tempExport))
 					{
                         //  Wenn mehr als ein Parameter übergeben wurde, dann als string "joinen"
@@ -760,7 +700,6 @@ namespace checkInstalledSoftware
 				}
 				catch (Exception ex)
 				{
-
 					Console.WriteLine (ex.Message);
 					System.Threading.Thread.CurrentThread.Abort ();
 				}
@@ -787,10 +726,7 @@ namespace checkInstalledSoftware
 
             if (Path.IsPathRooted(setting.strExportTartgetDir))
             {
-                //if (File.Exists (tempExport))
-                //{
                 tempExport = Path.Combine(new[] { setting.strExportTartgetDir, setting.strExportFileName + ".csv" });
-                //}
             }
             else
             {
@@ -811,7 +747,6 @@ namespace checkInstalledSoftware
 
                 try
                 {
-                    //using (StreamWriter sw = File.AppendText (Path.Combine (new string [] { setting.strExportTartgetDir, setting.strExportFileName + ".txt" })))
                     using (StreamWriter sw = File.AppendText(tempExport))
                     {
                         if (vals != null && vals.Length > 0)
@@ -828,7 +763,6 @@ namespace checkInstalledSoftware
                 }
                 catch (Exception ex)
                 {
-
                     Console.WriteLine(ex.Message);
                     System.Threading.Thread.CurrentThread.Abort();
                 }
@@ -852,11 +786,6 @@ namespace checkInstalledSoftware
             }
         }
 
-        //public List<string> LeseUnterVerzeichnisse()
-        //{
-        //    return new List<string> { "Test1", "Test3" } ;
-        //}
-
         public List<string> LeseUnterverzeichniss()
         {
             try
@@ -868,11 +797,7 @@ namespace checkInstalledSoftware
                 Console.WriteLine(x.Message);
                 return null;
             }
-            
-            //return new List<string> { "Test 123" };
         }
-
-
     }
 
     class AppInformation
@@ -996,7 +921,7 @@ namespace checkInstalledSoftware
 
         [Option('x', "export", Required = false, Separator = ',',
         HelpText = "Ausgabe der Listen als: [CSV|TXT|JSON|XML]")]
-        //public string strFiles { get; set; }
+
         public IEnumerable<string> expFiles { get; set; }
 
         [Option('s', "searchtype", Required = false, Default = "AUTO",
@@ -1070,14 +995,6 @@ namespace checkInstalledSoftware
 
         [JsonProperty(PropertyName = "SearchFolderDepth", Required = Required.AllowNull)]
         public bool iSearchFolderDepth { get; set; } // C# 6.0  = false;
-
-        /*
-         "SearchFileSystem": "true",
-        "SearchFolderPattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",
-        "SearchFileExt": [ "exe" ],
-        "SearchSubFolder": [ "c:\\Programme", "c:\\programme (x86)" ],
-        "SearchFolderDepth": 2,
-        */
     }
 
 	public class ExportNoFileException : Exception
@@ -1086,7 +1003,6 @@ namespace checkInstalledSoftware
 		public ExportNoFileException (string message) : base (message)
 		{
 			Program.Status = (int)Program.nagiosStatus.Critical;
-			//Thread.CurrentThread.Abort ();
 			Environment.Exit ((int) Program.nagiosStatus.Critical);
 		}
 		public ExportNoFileException (string message, Exception inner) : base (message, inner) { }
