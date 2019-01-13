@@ -354,7 +354,11 @@ namespace checkInstalledSoftware
         static void GetRegistryInformation(bool is64Bit)
         {
 			RegistryKey key;
-			string activePath = string.Empty;
+            string valueType = "";
+            string value = "";
+            Dictionary<string, string> dicTemp;
+
+            string activePath = string.Empty;
 			
 			//	Wenn die Anwendung kein 64Bit Process ist, kann diese nur mit Umweg auf den 64Bit Bereich der Registry zugreifen
 			if (is64Bit && !Environment.Is64BitProcess) 
@@ -371,69 +375,75 @@ namespace checkInstalledSoftware
 
             if (key != null && key.SubKeyCount > 0)
             {
+                dicTemp = new Dictionary<string, string>();
+
                 //  Alle Schlüssel der Installierten Anwendungen
                 foreach (string  appKey in key.GetSubKeyNames())
                 {
                     if((valueNames = key.OpenSubKey(appKey, false).GetValueNames()).Length > 0)
                     {
-                        Add2Dictionary(valueNames, activePath + appKey);
+                        foreach (string str in valueNames)
+                        {
+                            switch (key.GetValueKind(str))
+                            {
+                                case RegistryValueKind.Binary:
+                                    valueType = "Binary";
+                                    break;
+                                case RegistryValueKind.DWord:
+                                    valueType = "32-Bit DWord";
+                                    break;
+                                case RegistryValueKind.ExpandString:
+                                    valueType = "String mit Vars";
+                                    break;
+                                case RegistryValueKind.MultiString:
+                                    valueType = "Doppel-NULL String";
+                                    break;
+                                case RegistryValueKind.None:
+                                    valueType = "Kein Datentyp";
+                                    break;
+                                case RegistryValueKind.QWord:
+                                    valueType = "64-Bit DWord";
+                                    break;
+                                case RegistryValueKind.String:
+                                    valueType = "String";
+                                    break;
+                                case RegistryValueKind.Unknown:
+                                    valueType = "Unbekannt";
+                                    break;
+                                default:
+                                    valueType = "N/A";
+                                    break;
+                            }
+                            value = string.Format("[{0}] {1}", valueType, key.GetValue(str).ToString());
+                            dicTemp.Add(str, value);
+                        }
+                        //Add2Dictionary(valueNames, activePath + appKey);
+                        Add2Dictionary(dicTemp, activePath + appKey);
                     }
                 }
             }
         }
 
-        static void Add2Dictionary(string[] valueList, string RegPath)
+        //static void Add2Dictionary(string[] valueList, string RegPath, bool isRegistryKey=true)
+        static void Add2Dictionary(Dictionary<string, string> dicTemp, string RegPath, bool isRegistryKey = true)
         {
+            //  TODO: Try ... Catch bei Registry Zugriff
+            //  ArgumentException, UnauthorizedAccessException, SecurityException
 //            RegistryKey key = Registry.LocalMachine.OpenSubKey(RegPath, false);
- 			RegistryKey key = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(RegPath,false);
+ 			//RegistryKey key = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(RegPath,false);
             AppInformation appInf;
-            Dictionary<string, string> dicTemp;
-            string valueType = "";
-            string value;
+            
+            
+            
 
-            if (key != null && key.ValueCount > 0)
-            {
-                appInf = new AppInformation();
-                dicTemp = new Dictionary<string, string>();
-
-                appInf.appRegKey = RegPath;
-
-                foreach (string str in valueList)
+            //if (key != null && key.ValueCount > 0)
+            //{
+                appInf = new AppInformation
                 {
-                    switch( key.GetValueKind(str))
-                    {
-                        case RegistryValueKind.Binary:
-                            valueType = "Binary";
-                            break;
-                        case RegistryValueKind.DWord:
-                            valueType = "32-Bit DWord";
-                            break;
-                        case RegistryValueKind.ExpandString:
-                            valueType = "String mit Vars";
-                            break;
-                        case RegistryValueKind.MultiString:
-                            valueType = "Doppel-NULL String";
-                            break;
-                        case RegistryValueKind.None:
-                            valueType = "Kein Datentyp";
-                            break;
-                        case RegistryValueKind.QWord:
-                            valueType = "64-Bit DWord";
-                            break;
-                        case RegistryValueKind.String:
-                            valueType = "String";
-                            break;
-                        case RegistryValueKind.Unknown:
-                            valueType = "Unbekannt";
-                            break;
-                        default:
-                            valueType = "N/A";
-                            break;
-                    }
-                    value = string.Format("[{0}] {1}", valueType, key.GetValue(str).ToString());
-                    dicTemp.Add(str, value);
-                }
-                appInf.appRegistry = dicTemp;
+                    appRegKey = RegPath,
+                    appRegistry = dicTemp,
+                    appIsRegistryPath = isRegistryKey
+                };
 
                 int i = 0;
                 string appname = appInf.appName;
@@ -448,7 +458,7 @@ namespace checkInstalledSoftware
                 }
 
                 dicApplications.Add(appInf.appName, appInf);
-            }
+            //}
         }
 
         static void ExportData()
