@@ -59,6 +59,8 @@ namespace checkInstalledSoftware
         static Settings setting;
 		static int exportCount = 0;
 
+        static List<Task<List<string>>> searchTasks;
+
 		public static bool writeLog { get; set; } // C# 6.0 = true;
 		public static bool isWriteExport { get; set; } // C# 6.0 = false;
 
@@ -83,8 +85,9 @@ namespace checkInstalledSoftware
 			
             dicApplications = new Dictionary<string, AppInformation>();
             string[] cmdLine;
+            searchTasks = new List < Task < List<string> > > ();
 
-			try
+            try
             {
 
                 if ((cmdLine = Environment.GetCommandLineArgs()).Length > 1)
@@ -119,12 +122,12 @@ namespace checkInstalledSoftware
                 WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
 
                 // Lesen der Uninstall Einträger der Registry
-                ReadApplicatiosnFromRegistry();
+                ReadApplicationsFromRegistry();
 
                 // Wenn Aktiv, auch Verzeichnisse durchsuchen
                 if (setting.bSearchFileSystem)
                 {
-                    DurchsucheUnterverzeichnisseNachApplicationen();
+                    DurchsucheUnterverzeichnisseNachApplicationenAsync();
                 }
 
                 WriteToLogFile("Exportieren der Daten", null);
@@ -179,7 +182,7 @@ namespace checkInstalledSoftware
             }
         }
 
-        private static void ReadApplicatiosnFromRegistry()
+        private static void ReadApplicationsFromRegistry()
         {
             WriteToLogFile("Lesen der Registry UNINSTALL Einträge", null);
             WriteToLogFile("Speicherverbrauch: {0}", Environment.WorkingSet.ToString());
@@ -212,7 +215,7 @@ namespace checkInstalledSoftware
             }
         }
 
-        private static async void DurchsucheUnterverzeichnisseNachApplicationen()
+        private static async Task DurchsucheUnterverzeichnisseNachApplicationenAsync()
         {
             // Verzeichnisse durchsucht werden sollen, dann müssen die weiterenOptionen gegeben sein.
             //if (string.IsNullOrWhiteSpace(setting.strSearchFolderPattern)) { };
@@ -233,7 +236,10 @@ namespace checkInstalledSoftware
                             try
                             {
                                 Verzeichnisse = new DurchsucheVerzeichnisse(Path.Combine(new string[] { AppDomain.CurrentDomain.BaseDirectory, path }));
-                                validPath.AddRange(await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
+
+                                searchTasks.Add(Task <List<string> >.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
+                                    //await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss);
+                                //validPath.AddRange(await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
                             }
                             catch (UnauthorizedAccessException UnAuthFile)
                             {
@@ -253,7 +259,8 @@ namespace checkInstalledSoftware
                                 //validPath.AddRange((List<string>)temp.toArray());
 
                                 Verzeichnisse = new DurchsucheVerzeichnisse(path);
-                                validPath.AddRange(await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
+                                //validPath.AddRange(await Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
+                                searchTasks.Add(Task<List<string>>.Factory.StartNew(Verzeichnisse.LeseUnterverzeichniss));
                             }
                         }
                         catch (UnauthorizedAccessException UnAuthFile)
@@ -269,6 +276,13 @@ namespace checkInstalledSoftware
                     }
                     //continue;
                 }
+                await Task.WhenAll(searchTasks);
+
+                foreach (var myPath in searchTasks)
+                {
+                    validPath.AddRange(await myPath);
+                }
+
                 if (validPath.Count > 0)
                 {
                     foreach (var dir in validPath)
@@ -326,6 +340,7 @@ namespace checkInstalledSoftware
                         try
                         {
                             FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(fi.FullName);
+                            dicTemp = new Dictionary<string, string>();
 
                             dicTemp.Add("FileComment", fvi.Comments);
                             dicTemp.Add("FileDescription", fvi.FileDescription);
@@ -343,7 +358,7 @@ namespace checkInstalledSoftware
 
                             Add2Dictionary(dicTemp, fi.FullName, false);
 
-                            dicTemp.Clear();
+                            //dicTemp.Clear();
                         }
                         catch (UnauthorizedAccessException UnAuthFile)
                         {
@@ -396,12 +411,14 @@ namespace checkInstalledSoftware
 
             if (key != null && key.SubKeyCount > 0)
             {
-                dicTemp = new Dictionary<string, string>();
+                
 
                 //  Alle Schlüssel der Installierten Anwendungen
                 foreach (string  appKey in key.GetSubKeyNames())
                 {
-                    if((valueNames = key.OpenSubKey(appKey, false).GetValueNames()).Length > 0)
+                    dicTemp = new Dictionary<string, string>();
+
+                    if ((valueNames = key.OpenSubKey(appKey, false).GetValueNames()).Length > 0)
                     {
                         foreach (string str in valueNames)
                         {
@@ -440,7 +457,7 @@ namespace checkInstalledSoftware
                         }
                         //Add2Dictionary(valueNames, activePath + appKey);
                         Add2Dictionary(dicTemp, activePath + appKey);
-                        dicTemp.Clear();
+                        //dicTemp.Clear();
                     }
                 }
             }
@@ -465,21 +482,21 @@ namespace checkInstalledSoftware
             appInf.appRegKey = RegPath;
             appInf.appRegistry = dicTemp;
             appInf.appIsRegistryPath = isRegistryKey;
-                //};
+            //};
 
-                int i = 0;
-                string appname = appInf.appName;
+            int i = 0;
+            string appname = appInf.appName;
 
-                //  TODO: Nahng nur wenn standard bereits vorhanden
-                //  Dppelte Key verhindern
-                if (dicApplications.ContainsKey(appname))
-                {
-                    while (dicApplications.ContainsKey(appname + "_" + i))
-                        i++;    //  Incrementieren bis es passt
-                    appInf.appName = appname + "_" + i;
-                }
+            //  TODO: Nahng nur wenn standard bereits vorhanden
+            //  Dppelte Key verhindern
+            if (dicApplications.ContainsKey(appname))
+            {
+                while (dicApplications.ContainsKey(appname + "_" + i))
+                    i++;    //  Incrementieren bis es passt
+                appInf.appName = appname + "_" + i;
+            }
 
-                dicApplications.Add(appInf.appName, appInf);
+            dicApplications.Add(appInf.appName, appInf);
             //}
         }
 
@@ -498,9 +515,8 @@ namespace checkInstalledSoftware
 				//    Debug.WriteLine(name);
 				//}
 				int i = 0;
-				WriteToTxtExportFile (string.Format ("{0}: Installierte Software / Suchfilter: {1} / System:  {2}\r\n", DateTime.Now.ToString (), setting.strSearchTag, Environment.MachineName));
-
-				foreach (AppInformation ai in dicApplications.Values)
+                bool Header = true;
+                foreach (AppInformation ai in dicApplications.Values)
                 {
                     string strTemp;
                     /*
@@ -530,11 +546,17 @@ namespace checkInstalledSoftware
                                         switch (exoFormat)
                                         {
                                             case "TXT":
+                                                if (Header)
+                                                {
+                                                    WriteToTxtExportFile(string.Format("{0}: Installierte Software / Suchfilter: {1} / System:  {2}\r\n", DateTime.Now.ToString(), setting.strSearchTag, Environment.MachineName));
+                                                    Header = false;
+                                                }
                                                 WriteToTxtExportFile(new[] { ai.appName, ai.appVersion, ai.appPublisher });
+                                                i++;
                                                 break;
                                             case "CSV":
                                                 break;
-                                                // Weitere Formate
+                                            // Weitere Formate
                                             case "XML":
                                             case "SQL":
                                                 break;
@@ -556,56 +578,14 @@ namespace checkInstalledSoftware
                         WriteToTxtExportFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
                         return;
                     }
-
-                    WriteToLogFile("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString(), i.ToString());
-                    exportCount = i;
-                    isWriteExport = false;
-
-                    return;
-                    //##### ######## #####
-
-                    if (!string.IsNullOrWhiteSpace(setting.strSearchTag) && !string.IsNullOrWhiteSpace (setting.strSearchPattern))
-					{
-						ai.appRegistry.TryGetValue (setting.strSearchTag, out strTemp);
-
-						if (setting.bUseRegEx&& !string.IsNullOrWhiteSpace(strTemp))
-						{
-							if(Regex.IsMatch (strTemp, setting.strSearchPattern, setting.bCaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase))
-							{
-                                //WriteToTxtExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, ai.appPublisher }));
-                                WriteToTxtExportFile(new[] { ai.appName, ai.appVersion, ai.appPublisher });
-                                i++;
-							}
-						}
-						else if (!setting.bUseRegEx && !string.IsNullOrWhiteSpace (strTemp))
-						{
-							//	if (strTemp == setting.strSearchPattern)
-							if(Regex.Match(strTemp, setting.strSearchPattern).Success)
-							{
-								//WriteToTxtExportFile (string.Format ("{2} - {0} - {1}", new [] { ai.appName, ai.appVersion, ai.appPublisher }));
-                                WriteToTxtExportFile(new[] { ai.appName, ai.appVersion, ai.appPublisher });
-                                i++;
-							}
-						}
-
-					}
-					else
-					{
-						Debug.WriteLine (string.Format ("Fehler: Es wurde kein Suchbereich angegeben"));
-						WriteToLogFile (string.Format ("Fehler: Es wurde kein Suchbereich angegeben"));
-						//	TODO: Alle Exportformate beachten
-						//WriteToTxtExportFile (string.Format ("Fehler: Es wurde kein Suchbereich angegeben"));
-                        WriteToTxtExportFile(new[] { "Fehler: Es wurde kein Suchbereich angegeben" });
-                        return;
-					}
-
-					/*#####*/
-
-					ai.appRegistry.TryGetValue("Publisher", out strTemp);
-
-                    Debug.WriteLine(string.Format("{2} - {0} - {1}", ai.appName, ai.appVersion, strTemp));
-					//	TODO: Alle Exportformate beachten
                 }
+
+                WriteToLogFile("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString(), i.ToString());
+                exportCount = i;
+                isWriteExport = false;
+
+                //Debug.WriteLine(string.Format("{2} - {0} - {1}", ai.appName, ai.appVersion, strTemp));
+				//	TODO: Alle Exportformate beachten
 			}
         }
 
