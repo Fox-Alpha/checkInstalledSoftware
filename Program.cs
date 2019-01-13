@@ -293,6 +293,8 @@ namespace checkInstalledSoftware
         static void ApplicationFileList(string PathToSearch)
         {
             DirectoryInfo diTop = new DirectoryInfo(PathToSearch);
+            List<FileVersionInfo> fviApplication = new List<FileVersionInfo>();
+            Dictionary<string, string> dicTemp = new Dictionary<string, string>();
 
             try
             {
@@ -312,29 +314,48 @@ namespace checkInstalledSoftware
                 //    }
                 //}
 
-                List<FileVersionInfo> fviApplication = new List<FileVersionInfo>();
+               
 
                 //foreach (var di in diTop.EnumerateDirectories(string.IsNullOrEmpty(PathToSearch) ? "*" : setting.strSearchFolderPattern ))
                 //foreach (var di in diTop.EnumerateDirectories("*", SearchOption.TopDirectoryOnly))
                 //{
-                    try
+                try
+                {
+                    foreach (var fi in diTop.EnumerateFiles("*.exe", SearchOption.TopDirectoryOnly))
                     {
-                        foreach (var fi in diTop.EnumerateFiles("*.exe", SearchOption.AllDirectories))
+                        try
                         {
-                            try
-                            {
-                                fviApplication.Add(FileVersionInfo.GetVersionInfo(fi.FullName));
-                            }
-                            catch (UnauthorizedAccessException UnAuthFile)
-                            {
-                                Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
-                            }
+                            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(fi.FullName);
+
+                            dicTemp.Add("FileComment", fvi.Comments);
+                            dicTemp.Add("FileDescription", fvi.FileDescription);
+                            dicTemp.Add("FileName", fvi.FileName);
+                            dicTemp.Add("FileVersion", fvi.FileVersion);
+                            dicTemp.Add("FilePath", fi.DirectoryName);
+                            dicTemp.Add("Filesize", fi.Length.ToString());
+
+                            dicTemp.Add("DisplayName", fvi.ProductName);
+                            dicTemp.Add("DisplayVersion", fvi.ProductVersion);
+                            dicTemp.Add("Publisher", fvi.CompanyName);
+                            dicTemp.Add("LegalCopyright", fvi.LegalCopyright);
+
+                            fviApplication.Add(fvi);
+
+                            Add2Dictionary(dicTemp, fi.FullName, false);
+
+                            dicTemp.Clear();
+                        }
+                        catch (UnauthorizedAccessException UnAuthFile)
+                        {
+                            Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
                         }
                     }
-                    catch (UnauthorizedAccessException UnAuthSubDir)
-                    {
-                        Console.WriteLine("UnAuthSubDir: {0}", UnAuthSubDir.Message);
-                    }
+                }
+                catch (UnauthorizedAccessException UnAuthSubDir)
+                {
+                    Console.WriteLine("UnAuthSubDir: {0}", UnAuthSubDir.Message);
+                }
+
                 //}
             }
             catch (DirectoryNotFoundException DirNotFound)
@@ -354,6 +375,7 @@ namespace checkInstalledSoftware
         static void GetRegistryInformation(bool is64Bit)
         {
 			RegistryKey key;
+            string[] valueNames;
             string valueType = "";
             string value = "";
             Dictionary<string, string> dicTemp;
@@ -371,7 +393,6 @@ namespace checkInstalledSoftware
 	            activePath = string.Format(RegPath2Uninstall, is64Bit ? "" : RegPath2Uninstall32);
 	            key = Registry.LocalMachine.OpenSubKey(activePath,false);
 			}
-            string[] valueNames;
 
             if (key != null && key.SubKeyCount > 0)
             {
@@ -384,7 +405,7 @@ namespace checkInstalledSoftware
                     {
                         foreach (string str in valueNames)
                         {
-                            switch (key.GetValueKind(str))
+                            switch (key.OpenSubKey(appKey, false).GetValueKind(str))
                             {
                                 case RegistryValueKind.Binary:
                                     valueType = "Binary";
@@ -414,11 +435,12 @@ namespace checkInstalledSoftware
                                     valueType = "N/A";
                                     break;
                             }
-                            value = string.Format("[{0}] {1}", valueType, key.GetValue(str).ToString());
+                            value = string.Format("[{0}] {1}", valueType, key.OpenSubKey(appKey, false).GetValue(str).ToString());
                             dicTemp.Add(str, value);
                         }
                         //Add2Dictionary(valueNames, activePath + appKey);
                         Add2Dictionary(dicTemp, activePath + appKey);
+                        dicTemp.Clear();
                     }
                 }
             }
@@ -432,18 +454,18 @@ namespace checkInstalledSoftware
 //            RegistryKey key = Registry.LocalMachine.OpenSubKey(RegPath, false);
  			//RegistryKey key = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry64).OpenSubKey(RegPath,false);
             AppInformation appInf;
-            
-            
-            
+
+
+
 
             //if (key != null && key.ValueCount > 0)
             //{
-                appInf = new AppInformation
-                {
-                    appRegKey = RegPath,
-                    appRegistry = dicTemp,
-                    appIsRegistryPath = isRegistryKey
-                };
+            appInf = new AppInformation();
+            //{
+            appInf.appRegKey = RegPath;
+            appInf.appRegistry = dicTemp;
+            appInf.appIsRegistryPath = isRegistryKey;
+                //};
 
                 int i = 0;
                 string appname = appInf.appName;
@@ -939,7 +961,7 @@ namespace checkInstalledSoftware
 
         public AppInformation()
         {
-            appRegistry = new Dictionary<string, string>();
+            _appRegistry = new Dictionary<string, string>();
         }
 
         public AppInformation(string _Name, string _Version, string _Key, string _publisher = "", bool _appIsRegistryPath = true)
@@ -953,7 +975,7 @@ namespace checkInstalledSoftware
 
             appHashValue = CalculateMD5Hash(string.Format("{0}{1}{2}", appName, appVersion, appPublisher));
 
-            appRegistry = new Dictionary<string, string>();
+            _appRegistry = new Dictionary<string, string>();
         }
 
         private string CalculateMD5Hash(string input)
