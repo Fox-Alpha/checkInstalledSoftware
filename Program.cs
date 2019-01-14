@@ -466,6 +466,16 @@ namespace checkInstalledSoftware
             {
 				int i = 0;
                 bool Header = true;
+
+                if (string.IsNullOrWhiteSpace(setting.strSearchTag))
+                {
+                    Debug.WriteLine(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
+                    WriteToLogFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
+                    WriteToTxtExportFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
+
+                    return;
+                }
+
                 foreach (AppInformation ai in dicApplications.Values)
                 {
                     string strTemp;
@@ -478,6 +488,8 @@ namespace checkInstalledSoftware
 
                     //Prüfen ob ein Filterobject in der Konfiguration angegeben wurde. z.B. Publisher, Versionm, AppName, etc.
                     ai.appRegistry.TryGetValue(setting.strSearchTag, out strTemp);
+                    if (string.IsNullOrWhiteSpace(strTemp))
+                        continue;
 
 
                     if (!string.IsNullOrWhiteSpace(strTemp))
@@ -520,13 +532,13 @@ namespace checkInstalledSoftware
                             }
                         }
                     }
-                    else
-                    {
-                        Debug.WriteLine(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
-                        WriteToLogFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
-                        WriteToTxtExportFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
-                        return;
-                    }
+                    //else
+                    //{
+                    //    Debug.WriteLine(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
+                    //    WriteToLogFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
+                    //    WriteToTxtExportFile(string.Format("Fehler: Es wurde kein Suchbereich angegeben"));
+                    //    return;
+                    //}
                 }
 
                 WriteToLogFile("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString(), i.ToString());
@@ -688,7 +700,7 @@ namespace checkInstalledSoftware
 						{
                             //sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));
                             //sw.Write (string.Format ("{1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));    //Zeitstempel wird nicht geschrieben
-                            sw.Write(string.Join(" - ", vals));
+                            sw.Write(string.Format("{0}\r\n", string.Join(" - ", vals)));
 						}
                         //  Ansonsten nur den ersten Paremeter ausgeben
 						else if (vals != null && vals.Length == 1)
