@@ -127,7 +127,7 @@ namespace checkInstalledSoftware
                 // Wenn Aktiv, auch Verzeichnisse durchsuchen
                 if (setting.bSearchFileSystem)
                 {
-                    DurchsucheUnterverzeichnisseNachApplicationenAsync();
+                    DurchsucheUnterverzeichnisseNachApplicationenAsync().Wait();
                 }
 
                 WriteToLogFile("Exportieren der Daten", null);
