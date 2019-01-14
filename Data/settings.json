@@ -7,18 +7,20 @@
     /* TODO:	Optional leeres Pattern f�r Ausgabe aller installierten Anwendungen */
     /*			UseRegEx darf dann nicht 'TRUE' sein */
     /* "Pattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",*/
-    "Pattern": "Gigabyte",
+    "Pattern": "Adobe",
     /* "Pattern":"alpha com", */
     /* TODO: Vergleich ohne RegEx */
     "UseRegEx": "True",
     "CaseSensitive": "False",
 
     "SearchFileSystem": "true",
-    "SearchFolderPattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",
+    /* "SearchFolderPattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",*/
+    "SearchFolderPattern": ".*",
+
     "SearchFileExt": [ "exe" ],
     "SearchSubFolder": "False",
     //"SearchFilePath": [ "c:\\Programme", "\"c:\\programme (x86)\"" ],
-    "SearchFilePath": [ "c:\\temp", "c:\\Users", "%ProgramFiles%"  ],
+    "SearchFilePath": [ "c:\\temp", "c:\\Users", "%ProgramFiles%" ],
     "SearchFolderDepth": 2,
 
     /* Vorgaben f�r die Exportierten Daten */
@@ -26,7 +28,8 @@
     "ExportTargetDir": "c:\\Temp\\checkInstalledSoftware\\",
     "ExportFileName": "InstallierteSoftware",
     "ExportFileFormat": [
-        "TXT"
+        "TXT",
+        "CSV"
         /* TODO: "CSV", "XML", "JSON" */
         /* SQLite (.sqlite.db) */
     ],
