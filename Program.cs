@@ -254,17 +254,24 @@ namespace checkInstalledSoftware
                         }
                         catch (UnauthorizedAccessException UnAuthFile)
                         {
-                            //Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
+                            Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
                             //Console.ReadLine();
                             //continue;
                         }
                         catch (Exception ex)
                         {
-                            //throw new Exception("Durchsuchen eines Verzeichnisses nicht möglich: {ex.message}");
+                            throw new Exception("Durchsuchen eines Verzeichnisses nicht möglich: {ex.message}");
                         }
                     }
                     //continue;
                 }
+
+#if (DEBUG)
+                foreach (var tsk in searchTasks)
+                {
+                    Debug.WriteLine(string.Format($"Auf Task warten {searchTasks.Count}: {0} / {1}", tsk.Status.ToString(), tsk.Id.ToString()));
+                }
+#endif
                 await Task.WhenAll(searchTasks);
 
                 foreach (var myPath in searchTasks)
