@@ -127,7 +127,7 @@ namespace checkInstalledSoftware
                 // Wenn Aktiv, auch Verzeichnisse durchsuchen
                 if (setting.bSearchFileSystem)
                 {
-                    DurchsucheUnterverzeichnisseNachApplicationenAsync();
+                    DurchsucheUnterverzeichnisseNachApplicationenAsync().Wait();            
                 }
 
                 WriteToLogFile("Exportieren der Daten", null);
@@ -600,6 +600,11 @@ namespace checkInstalledSoftware
 
         static void WriteToLogFile(string MessageFormat, params string[] vals)
         {
+            //  TODO: Kein Logpfad, wenn Fehler beim laden der Settings !!!
+            if (setting == null)
+                throw new Exception("Keine Settings vorhanden, Meldung kann nicht protokolliert werden\n{MessageFormat}");
+                //return;
+
             if (!string.IsNullOrWhiteSpace(setting.strLogFile))
             {
 				if (!Directory.Exists(Path.GetDirectoryName(setting.strLogFile)))
