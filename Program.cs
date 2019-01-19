@@ -127,7 +127,7 @@ namespace checkInstalledSoftware
                 // Wenn Aktiv, auch Verzeichnisse durchsuchen
                 if (setting.bSearchFileSystem)
                 {
-                    DurchsucheUnterverzeichnisseNachApplicationenAsync().Wait();
+                    DurchsucheUnterverzeichnisseNachApplicationenAsync().Wait();            
                 }
 
                 WriteToLogFile("Exportieren der Daten", null);
@@ -254,17 +254,24 @@ namespace checkInstalledSoftware
                         }
                         catch (UnauthorizedAccessException UnAuthFile)
                         {
-                            //Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
+                            Console.WriteLine("UnAuthFile: {0}", UnAuthFile.Message);
                             //Console.ReadLine();
                             //continue;
                         }
                         catch (Exception ex)
                         {
-                            //throw new Exception("Durchsuchen eines Verzeichnisses nicht möglich: {ex.message}");
+                            throw new Exception("Durchsuchen eines Verzeichnisses nicht möglich: {ex.message}");
                         }
                     }
                     //continue;
                 }
+
+#if (DEBUG)
+                foreach (var tsk in searchTasks)
+                {
+                    Debug.WriteLine(string.Format($"Auf Task warten {searchTasks.Count}: {0} / {1}", tsk.Status.ToString(), tsk.Id.ToString()));
+                }
+#endif
                 await Task.WhenAll(searchTasks);
 
                 foreach (var myPath in searchTasks)
@@ -612,6 +619,11 @@ namespace checkInstalledSoftware
 
         static void WriteToLogFile(string MessageFormat, params string[] vals)
         {
+            //  TODO: Kein Logpfad, wenn Fehler beim laden der Settings !!!
+            if (setting == null)
+                throw new Exception("Keine Settings vorhanden, Meldung kann nicht protokolliert werden\n{MessageFormat}");
+                //return;
+
             if (!string.IsNullOrWhiteSpace(setting.strLogFile))
             {
 				if (!Directory.Exists(Path.GetDirectoryName(setting.strLogFile)))
