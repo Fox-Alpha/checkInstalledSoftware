@@ -1,52 +1,62 @@
 {
-    /* Parameter f�r die Suche */
-    /* "Name":"", "Version":"", "Publisher":"" */
-    /* TODO: Option 'ALL' Alle Schl�sselwerte durchsuchen */
-    "Search": "Publisher",
+  /* Parameter f�r die Suche */
+  /* "Name":"", "Version":"", "Publisher":"" */
+  /* TODO: Option 'ALL' Alle Schl�sselwerte durchsuchen */
+  "Search": "DisplayName",
 
-    /* TODO:	Optional leeres Pattern f�r Ausgabe aller installierten Anwendungen */
-    /*			UseRegEx darf dann nicht 'TRUE' sein */
-    /* "Pattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",*/
-    "Pattern": "Adobe",
-    /* "Pattern":"alpha com", */
-    /* TODO: Vergleich ohne RegEx */
-    "UseRegEx": "True",
-    "CaseSensitive": "False",
+  /* TODO:	Optional leeres Pattern f�r Ausgabe aller installierten Anwendungen */
+  /*			UseRegEx darf dann nicht 'TRUE' sein */
+  /* "Pattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",*/
+  "Pattern": "\\.NET Core",
+  /* "Pattern":"alpha com", */
+  /* TODO: Vergleich ohne RegEx */
+  "UseRegEx": "True",
+  "CaseSensitive": "False",
 
-    "SearchFileSystem": "true",
-    /* "SearchFolderPattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",*/
-    "SearchFolderPattern": ".*",
+  "SearchFileSystem": "false",
+  /* "SearchFolderPattern": "(A|a)lpha(\\s|[-]{0,1})(C|c)om",*/
+  "SearchFolderPattern": ".*",
 
-    "SearchFileExt": [ "exe" ],
-    "SearchSubFolder": "False",
-    //"SearchFilePath": [ "c:\\Programme", "\"c:\\programme (x86)\"" ],
-    "SearchFilePath": [ "c:\\temp", "c:\\Users", "%ProgramFiles%" ],
-    "SearchFolderDepth": 2,
+  "SearchFileExt": [ "exe" ],
+  "SearchSubFolder": "False",
+  //"SearchFilePath": [ "c:\\Programme", "\"c:\\programme (x86)\"" ],
+  "SearchFilePath": [ "c:\\temp", "c:\\Users", "%ProgramFiles%" ],
+  "SearchFolderDepth": 2,
 
-    /* Vorgaben f�r die Exportierten Daten */
-    /* "ExportTargetDir":".\\Data\\", */
-    "ExportTargetDir": "c:\\Temp\\checkInstalledSoftware\\",
-    "ExportFileName": "InstallierteSoftware",
-    "ExportFileFormat": [
-        "TXT",
-        "CSV"
-        /* TODO: "CSV", "XML", "JSON" */
-        /* SQLite (.sqlite.db) */
-    ],
+  /* Vorgaben f�r die Exportierten Daten */
+  /* "ExportTargetDir":".\\Data\\", */
+  "ExportTargetDir": "c:\\Temp\\checkInstalledSoftware\\",
+  "ExportFileName": "InstallierteSoftware",
+  /* TODO */
+  "ExportFilePrefix": [
+    "DATETIME"
+    //,"DATE",
+    //"TIME",
+    //"HOSTNAME"
+  ],
+  /* TODO */
+  "ExportFilePrefixCombinator": "_",
+  /* TODO */
+  "ExportFileFormat": [
+    "TXT",
+    "CSV"
+    /* TODO: "XML", "JSON" */
+    /* SQLite (.sqlite.db) */
+  ],
 
-    /* Schreiben einer Logdatei, Pfad kann relativ zum RootDir sein '\\' oder zur Application .\\Data\\*/
-    /* Wenn nicht angegeben und UseOutputInNagios == False, dann wird in die Console geschrieben */
-    "Log": "c:\\temp\\checkInstalledSoftware\\checkInstalledSoftwarel.Log.txt",
-    "AppendLog": "false",
+  /* Schreiben einer Logdatei, Pfad kann relativ zum RootDir sein '\\' oder zur Application .\\Data\\*/
+  /* Wenn nicht angegeben und UseOutputInNagios == False, dann wird in die Console geschrieben */
+  "Log": "c:\\temp\\checkInstalledSoftware\\checkInstalledSoftwarel.Log.txt",
+  "AppendLog": "false",
 
-    /*	TODO: Option Log2Console */
-    /*	Schreibt Informelle Ausgaben in die Console */
-    /*"Log2Console":"True",
+  /*	TODO: Option Log2Console */
+  /*	Schreibt Informelle Ausgaben in die Console */
+  /*"Log2Console":"True",
 	
 	/* Noch nicht implementiert */
-    "LogSuffix": "",
-    "LogPrefix": "",
+  "LogSuffix": "",
+  "LogPrefix": "",
 
-    /* Output Optionen */
-    "UseOutputInNagios": "False"
+  /* Output Optionen */
+  "UseOutputInNagios": "False"
 }
