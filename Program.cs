@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
@@ -9,11 +8,10 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 using Microsoft.Win32;
-
-using CommandLine;
 using CommandLine.Text;
 using Newtonsoft.Json;
-using System.Security.Cryptography;
+using CsvHelper;
+using System.Globalization;
 
 /*
 	TODO:
@@ -260,7 +258,7 @@ namespace checkInstalledSoftware
                         }
                         catch (Exception ex)
                         {
-                            throw new Exception("Durchsuchen eines Verzeichnisses nicht möglich: {ex.message}");
+                            throw new Exception($"Durchsuchen eines Verzeichnisses nicht möglich: {ex.Message}");
                         }
                     }
                     //continue;
@@ -524,11 +522,13 @@ namespace checkInstalledSoftware
                                                 i++;
                                                 break;
                                             case "CSV":
+                                                WriteToCsvExportFile( ai );
+                                                i++;
                                                 break;
                                             // Weitere Formate, noch nicht verwendet
                                             case "XML":
                                             case "SQL":
-                                                break;
+                                                //break;
                                             default:
                                                 WriteToLogFile(string.Format("Fehler: Das angegebene Dateiformat wird für den Export nicht unterstützt: {0}", exoFormat));
                                                 Console.WriteLine(string.Format("Fehler: Das angegebene Dateiformat wird für den Export nicht unterstützt: {0}", exoFormat));
@@ -547,7 +547,7 @@ namespace checkInstalledSoftware
                     //    return;
                     //}
                 }
-
+                i = i / setting.listFormat.Count;
                 WriteToLogFile("Es wurden {1} von {0} Einträge exportiert", dicApplications.Count.ToString(), i.ToString());
                 exportCount = i;
                 isWriteExport = false;
@@ -730,7 +730,8 @@ namespace checkInstalledSoftware
 			}
 		}
 
-        static void WriteToCsvExportFile(string MessageFormat, params string[] vals)
+        //static void WriteToCsvExportFile(string MessageFormat, params string[] vals)
+        static void WriteToCsvExportFile(AppInformation ai)
         {
             /* Wenn kein Verzeichnis angegeben wurde, wird das Verzeichnis der Anwendung verwendet */
             if (string.IsNullOrWhiteSpace(setting.strExportTartgetDir))
@@ -771,19 +772,45 @@ namespace checkInstalledSoftware
 
                 try
                 {
-                    using (StreamWriter sw = File.AppendText(tempExport))
+                    using (var writer = new StreamWriter(tempExport, true))
                     {
-                        if (vals != null && vals.Length > 0)
+                        using (var csv = new CsvWriter(writer, CultureInfo.InvariantCulture))
                         {
-                            //sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));
-                            sw.Write(string.Format("{1}\r\n", DateTime.Now.ToString(), string.Format(MessageFormat, vals)));    //Zeitstempel wird nicht geschrieben
-                        }
-                        else
-                        {
-                            sw.Write(string.Format("{1}\r\n", DateTime.Now.ToString(), MessageFormat));      //Zeitstempel wird nicht geschrieben
-                                                                                                             //sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), MessageFormat));
+                            var keys = ai.appRegistry.Keys.ToList();
+
+                            csv.Configuration.RegisterClassMap<AppInformationMap>();
+                            csv.Configuration.Delimiter = ";";
+                            //csv.Configuration.NewLine = "\\r\\n";
+                            csv.WriteHeader<AppInformation>();
+
+                            foreach (var key in keys)
+                            {
+                                csv.WriteField(key);
+                            }
+                            csv.NextRecord();
+                            
+                            csv.WriteRecord(ai);
+
+                            foreach (var key in keys)
+                            {
+                                csv.WriteField(ai.appRegistry[key]);
+                            }
+                            csv.NextRecord();
                         }
                     }
+                    //using (StreamWriter sw = File.AppendText(tempExport))
+                    //{
+                    //    if (vals != null && vals.Length > 0)
+                    //    {
+                    //        //sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), string.Format (MessageFormat, vals)));
+                    //        sw.Write(string.Format("{1}\r\n", DateTime.Now.ToString(), string.Format(MessageFormat, vals)));    //Zeitstempel wird nicht geschrieben
+                    //    }
+                    //    else
+                    //    {
+                    //        sw.Write(string.Format("{1}\r\n", DateTime.Now.ToString(), MessageFormat));      //Zeitstempel wird nicht geschrieben
+                    //                                                                                         //sw.Write (string.Format ("{0}: {1}\r\n", DateTime.Now.ToString (), MessageFormat));
+                    //    }
+                    //}
                 }
                 catch (Exception ex)
                 {
@@ -823,215 +850,4 @@ namespace checkInstalledSoftware
             }
         }
     }
-
-    class AppInformation
-    {
-        //  Klasse zum aufnehmen der Informationen aus der Registry
-        public bool appIsRegistryPath { get; set; }
-
-        private string _appRegKey;
-        public string appRegKey
-        {
-            get { return _appRegKey; }
-            set { _appRegKey = value; }
-        }
-
-		public string appPublisher { get; set; }
-        public string appHashValue { get; private set; }
-
-        private string _appName;
-        public string appName
-        {
-            get { return _appName; }
-            set { _appName = value; }
-        }
-
-        private string _appVersion;
-        public string appVersion
-        {
-            get { return _appVersion; }
-            set { _appVersion = value; }
-        }
-
-        Dictionary<string, string> _appRegistry;
-        public Dictionary<string, string> appRegistry
-        {
-            get { return _appRegistry; }
-            set
-            {
-                string strTemp;
-                if (string.IsNullOrWhiteSpace(appName))
-                {
-                    value.TryGetValue("DisplayName", out strTemp);
-                    appName = string.IsNullOrWhiteSpace(strTemp) ? "_N/A_": strTemp;                    
-                }
-
-				if (string.IsNullOrWhiteSpace (appPublisher))
-				{
-					value.TryGetValue ("Publisher", out strTemp);
-					appPublisher = string.IsNullOrWhiteSpace (strTemp) ? "_NO_PUBLISHER_" : strTemp;
-				}
-
-				if (string.IsNullOrWhiteSpace(appVersion))
-                {
-                    value.TryGetValue("DisplayVersion", out strTemp);
-                    appVersion = string.IsNullOrWhiteSpace(strTemp) ? "_0.0.0.0_" : strTemp;                    
-                }
-
-                if (string.IsNullOrWhiteSpace(appHashValue))
-                    appHashValue = CalculateMD5Hash(string.Format("{0}{1}{2}", appName, appVersion, appPublisher));
-
-                if (string.IsNullOrWhiteSpace(appName))
-                    Debug.WriteLine("Kein Name angegeben");
-
-                _appRegistry = value;
-            }
-        }
-
-        public AppInformation()
-        {
-            _appRegistry = new Dictionary<string, string>();
-        }
-
-        public AppInformation(string _Name, string _Version, string _Key, string _publisher = "", bool _appIsRegistryPath = true)
-        {
-            appName = _Name;
-            appVersion = _Version;
-            appRegKey = _Key;
-            appPublisher = _publisher;
-
-            appIsRegistryPath = _appIsRegistryPath;
-
-            appHashValue = CalculateMD5Hash(string.Format("{0}{1}{2}", appName, appVersion, appPublisher));
-
-            _appRegistry = new Dictionary<string, string>();
-        }
-
-        private string CalculateMD5Hash(string input)
-        {
-
-            // step 1, calculate MD5 hash from input
-
-            MD5 md5 = MD5.Create();
-
-            byte[] inputBytes = Encoding.ASCII.GetBytes(input);
-
-            byte[] hash = md5.ComputeHash(inputBytes);
-
-            // step 2, convert byte array to hex string
-
-            StringBuilder sb = new StringBuilder();
-
-            for (int i = 0; i < hash.Length; i++)
-            {
-                sb.Append(hash[i].ToString("{0:x2}"));
-            }
-
-            return sb.ToString();
-        }
-
-        ~AppInformation()
-        {
-            if (_appRegistry != null)
-            {
-                _appRegistry.Clear();
-                _appRegistry = null;
-            }
-        }
-    }
-
-    class cmdOptions
-    {
-
-        [Option('x', "export", Required = false, Separator = ',',
-        HelpText = "Ausgabe der Listen als: [CSV|TXT|JSON|XML]")]
-
-        public IEnumerable<string> expFiles { get; set; }
-
-        [Option('s', "searchtype", Required = false, Default = "AUTO",
-        HelpText = "Nach was gesucht werden soll [Hersteller=Vendor|Name|Version]")]
-        public string strTextType { get; set; }
-
-        [Option('p', "pattern", Required = false, //Separator = ',',
-        HelpText = "Welcher Begriff gesucht wird")]
-        public string strFilter { get; set; }
-
-		[Option ('n', "nagios", Required = false, //Separator = ',',
-		HelpText = "Consolen Output ist Nagiosgerecht formartiert")]
-		public bool strOutputNagios { get; set; }
-	}
-
-	[JsonObject(MemberSerialization.OptIn)]
-    class Settings
-    {
-        public Settings() { }
-
-        [JsonProperty(PropertyName = "Search", Required = Required.Always)]
-        public string strSearchTag { get; set; }
-
-        [JsonProperty(PropertyName = "Pattern", Required = Required.Always)]
-        public string strSearchPattern { get; set; }
-
-        [JsonProperty(PropertyName = "UseRegEx", Required = Required.Always)]
-        public bool bUseRegEx { get; set; } // C# 6.0  = false;
-
-        [JsonProperty(PropertyName = "CaseSensitive")]
-        public bool bCaseSensitive { get; set; } // C# 6.0  = false;
-
-        [JsonProperty(PropertyName = "ExportTargetDir")]
-        public string strExportTartgetDir { get; set; } // C# 6.0  = "";   // TODO: Verzeichnis der Anwendung benutzen
-
-        [JsonProperty(PropertyName = "ExportFileName", Required = Required.Always)]
-        public string strExportFileName { get; set; } // C# 6.0  = "ExportInstalledApplications";     //   TODO: Anwendungsungsname als Default
-
-        [JsonProperty(PropertyName = "ExportFileFormat", Required = Required.Always)]
-        public List<string> listFormat { get; set; } // = new List<string>(){ "TXT" };
-
-        [JsonProperty(PropertyName = "Log", Required = Required.Always)]
-        public string strLogFile { get; set; } // C# 6.0  = "";
-
-        [JsonProperty(PropertyName = "AppendLog", DefaultValueHandling = DefaultValueHandling.IgnoreAndPopulate)]
-        public bool bAppend2Logfile { get; set; } // C# 6.0  = false;
-
-        [JsonProperty(PropertyName = "LogSuffix", Required = Required.AllowNull)]
-        public string strLogSuffix { get; set; } // C# 6.0  = "";
-
-        [JsonProperty(PropertyName = "LogPrefix", Required = Required.AllowNull)]
-        public string strLogPrefix { get; set; } // C# 6.0  = "";
-
-		[JsonProperty (PropertyName = "UseOutputInNagios")]
-		public bool bUseOutputInNagios { get; set; } // C# 6.0  = false;
-
-        [JsonProperty(PropertyName = "SearchFileSystem", Required = Required.Always)]
-        public bool bSearchFileSystem { get; set; } // C# 6.0  = false;
-
-        [JsonProperty(PropertyName = "SearchFolderPattern", Required = Required.AllowNull)]
-        public string strSearchFolderPattern { get; set; } // C# 6.0  = "";
-
-        [JsonProperty(PropertyName = "SearchFilePath", Required = Required.AllowNull)]
-        public List<string> lstSearchFilePath { get; set; } // = new List<string>(){ "TXT" };
-
-        [JsonProperty(PropertyName = "SearchFileExt", Required = Required.Always)]
-        public List<string> lstSearchFileExt { get; set; } // = new List<string>(){ "TXT" };
-
-        [JsonProperty(PropertyName = "SearchSubFolder")]
-        public bool bSearchSubFolder { get; set; } // C# 6.0  = false;
-
-        [JsonProperty(PropertyName = "SearchFolderDepth", Required = Required.AllowNull)]
-        public bool iSearchFolderDepth { get; set; } // C# 6.0  = false;
-    }
-
-	public class ExportNoFileException : Exception
-	{
-		public ExportNoFileException () { }
-		public ExportNoFileException (string message) : base (message)
-		{
-			Program.Status = (int)Program.nagiosStatus.Critical;
-			Environment.Exit ((int) Program.nagiosStatus.Critical);
-		}
-		public ExportNoFileException (string message, Exception inner) : base (message, inner) { }
-		protected ExportNoFileException (
-		  System.Runtime.Serialization.SerializationInfo info,
-		  System.Runtime.Serialization.StreamingContext context) : base (info, context) { }
-	}
 }
